@@ -1,0 +1,4 @@
+---
+slug: studying
+name: Studying
+---

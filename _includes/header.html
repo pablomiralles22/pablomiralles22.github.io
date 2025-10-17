@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    
+<header>
+    <h2 class="title">{{ site.title }}</h2>
+    <nav>
+        <p>
+            <a href="{{ site.url }}">Home</a> 
+        
+            {% for link in site.links %}
+                <a href="{{ site.url }}{{ link.url }}" {% if link.new_tab %}target="_blank"{% endif %}>{{ link.name }}</a>
+            {% endfor %}
+            
+            {% for link in site.special_links %}
+                <a href="{{ link.url }}" {% if link.new_tab %}target="_blank"{% endif %}>[{{ link.name }}]</a>
+            {% endfor %}
+        </p>
+    </nav>
+</header>

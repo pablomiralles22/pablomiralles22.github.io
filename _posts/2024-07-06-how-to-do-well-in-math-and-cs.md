@@ -1,0 +1,222 @@
+---
+layout: post
+title: "How to do well in your Mathematics and Computer Science courses"
+description: |
+    In this post I reflect on my process during my bachelor studies. I try to
+    synthesize what worked for doing good on my courses, both in terms of
+    learning and grades.
+date: 2024-07-07
+tags:
+    - "studying"
+author: Pablo Miralles
+toc:
+    sidebar: left
+---
+
+During my second year at university I wrote a post about my studying process. A
+lot has changed since then, and I wanted to update it and make it a bit more
+mature. In this post I try to give an idea of what worked for me, both in terms
+of learning and of getting good grades. Unfortunately, these two things are at
+times uncorrelated.
+
+I acknowledge that some of the things I advice here may take a lot of time, and
+time can be scarce, specially in a joint bachelor program where you take
+1.2-1.4x the workload. You may take what works best for you given the time you
+have. It is also important to be focused during the time you put in. In this
+regard, I have two pieces of advice. The first one is to be consistent with
+your schedule, as building the stamina to study for hours without distractions
+takes time. The second is minimizing the time in very stimulant activities such
+as social media.
+
+The post has three sections. In the first one, I talk about the main general
+principles that guided my studying process and projects, helping me prioritize
+what's important. The second one describes a general overview of a full
+semester for me. Finally, I discuss some other topics that typically come out
+when talking about studying, but that do not make, in my opinion, a big
+difference.
+
+## General principles and techniques
+
+### Solving problems
+
+The post could probably end right here. The single most importance thing you
+can do for yourself is solving problems, specially in mathematics, where you
+need to grasp complex concepts and apply them to solve non-algorithmic
+exercises. I have seen a lot of colleagues spending large amounts of time
+trying to get a deep understanding on the theory before getting to the problem
+sheets, leaving very little time for the latter.
+
+I prefer doing the opposite: I first get a very broad overview of the topic,
+and then start solving problems. This will force me to go back to the theory,
+search for what I need, and organize and connect ideas together. When the exam
+is close, I go back and study the theory thoroughly, but by this time I already
+knew most of it.
+
+This way, you are actively engaging with the information, because you need it
+for a specific goal. You need to understand, filter, connect and organize the
+information in order to solve your problem. This is much more entertaining than
+passively going through the text without any purpose or emotional attachment,
+and I find that information sticks in my mind much better when practicing these
+higher order thinking skills (organizing and connecting concepts to form
+arguments vs. understanding other's arguments).
+
+Another reason to prioritize problems is that this is the skill you will
+actually get paid for in the future. If you are a master of consuming and
+understanding information but not of reusing it for a particular problem or
+situation, you will provide little value for others.
+
+One practical consideration is deciding how much time you spend on any given
+problem if you are not able to solve it. This again will depend on how much
+time you have. I prefer spending at least 10-30 minutes on each problem, and
+trying again for several days. I find that the more effort I put into a
+problem, the better that particular pattern is encoded in my brain. Of course,
+if you are pressed for time, you will want to look at solutions much sooner. If
+solutions aren't provided in your class, you can always share solutions with
+your classmates.
+
+Sometimes you want to learn something relatively complex but your professor
+doesn't provide exercises or other ways to practice. In these cases you can
+find your own ways. You may find exercises in books, try to implement
+algorithms, create detailed concept mindmaps...
+
+Finally, sometimes you have to complete algorithmic exercises, where you always
+have to do the same steps, and the difficulty lies in not making stupid
+mistakes. I try not to lose a lot of time on these, as you don't get a lot of
+learning from them. I often do two or three of these exercises each day before
+the exam, so I am used to them and minimize the chances of dumb errors
+reducing the grade.
+
+### Flashcards for rote memorization
+
+While mathematics and computer science are two fields where you can mostly get
+away with understanding everything, you may still need to memorize things from
+time to time. This is the case of proofs that you may get asked during the
+exam, or questions about an IEEE standard if your professor wants to make
+everyone's life miserable.
+
+In this case, flashcard apps like Anki are the way to go. They force you to
+actively recall the information and automatically space out the flashcards so
+you don't over study (search active recall and spaced repetition if you are not
+familiar with these concepts). Mathematical proofs are a bit tricky because
+they can be quite large. You can divide them in parts if you prefer to, and
+write them out when you get the flashcards.
+
+### Spacing
+
+I try to space both my flashcard reviews and my practice sessions with
+exercises. While I recommend a decent block of time (at least 1-2 hours) for a
+practice session on a subject, I also like to interleave subjects and touch
+each subject in different days, allowing the information to rest in my mind
+during the night. As an example, if I have to do exercises for two classes and
+I have two days, I prefer doing one half of the exercises for each class both
+days. This also allows me to try unsolved exercises again.
+
+### Going the extra mile in projects
+
+In computer science you typically have to complete practical assignments. While
+sometimes useless, they often serve as a way to learn the topics for the class.
+I try, specially when I like the topic, to do something extra, something that I
+find motivating. This will make you learn more, have better projects for an
+initial portfolio, and help you lock in the highest grade. Some professors
+grade the assignments comparatively, so if other students do something extra
+and you don't, you may get penalized.
+
+## An overview of a semester
+
+After seeing the general principles you may want to know how they look like
+during a full semester. In Spain most people do 5 courses simultaneously
+spread over a 5 month period. How you structure your studying will obviously
+depend on the structure of your program.
+
+### During the semester
+
+The semester could be a bit chaotic. The only plan was to keep up with the
+exercises, specially for math courses, while also completing the assignments
+for computer science. Ideally I would also create theory flashcards along the
+way, but I almost never managed to.
+
+In the middle of the semester we would usually have midterms. I approached them
+exactly the same way as finals, with the process described in the next section.
+Since we still had classes I would apply the process during the previous
+weekend, and whenever I could during weekdays, although they were busy with
+classes. During these periods you will have to prioritize a lot, and catch up
+with the work you leave behind later on, often during holidays.
+
+
+### During final exams
+
+Finals usually take one full month, with 2-6 days between each exam. When
+finals start, it would be ideal to have finished almost all practice problems
+already, except perhaps algorithmic ones. This often requires spending the
+previous holiday (Christmas and Easter) completing them.
+
+In the days between exams I often only study for the next exam, except if some
+other exam is particularly difficult or the exam calendar is very imbalanced. I
+dedicate each day to perform one full review of the theory, one pass over each
+type of algorithmic exercise and some exams from previous years, if available.
+If I didn't manage to complete all problems before this period, I'll start with
+that while also studying the theory.
+
+The first day I almost always had to create flashcards from scratch, which was
+a bit painful. I swear revising becomes easier afterwards. Although I often
+ended up not spacing but cramming my flashcards, I already have a good idea of
+the theory from other activities. If we had a high theory load I would split
+revisions across days, but I always tried to do a minimum of two full revisions
+before the exam.
+
+Exam days were off days, I tried not to study before the exam. I would just
+get more nervous, and I don't think it pays off a lot if you studied before
+this point.
+
+## Other topics
+
+In this section I will go over some disconnected topics that are often
+discussed in the online study community. I leave them here because most of them
+aren't really critical, and doing what works best for you or makes your life
+more enjoyable is probably the right choice.
+
+#### Note taking
+
+Many people take notes during classes. Of course, if your professor doesn't
+provide any material, you are basically forced to. In other cases, I prefer not
+taking notes and focusing on understanding everything. If taking notes helps
+you keep your focus that's okay, but I wouldn't sacrifice understanding what is
+being said to take my own notes. If you are able to keep up with the class and
+still take notes, you could try creating a concept map during class, trying to
+connect ideas and getting some higher order thinking done.
+
+Cleaning up notes is more often than not very useless. It is very passive. It
+might make people feel productive but it is not forcing them to think about the
+topic. Summarizing can be a bit more active, since you need to evaluate and
+rank the information in terms of importance. If you can add mindmapping to
+connect ideas and get a high level picture of the topics it's probably even
+better. In any case, I think it is better to spend your time solving problems,
+and would only do these if I have spare time.
+
+#### Study block sizes
+
+How long do you study and rest for will depend on your preferences. I like
+using the Pomodoro method (with 25 minute sessions and 5 minute rests) for
+activities that are not very engaging, such us studying theory, or when I am
+having trouble focusing. For problem solving or coding I like going with the
+flow and taking rests whenever I feel very tired, typically every hour and a
+half or two hours.
+
+#### Scheduling study sessions
+
+When scheduling my sessions and activities, I try to get the least engaging or
+most boring things out of the way first, when I am not tired. Even though these
+things are often less important, I have no trouble keeping my focus for long
+hours on engaging activities like problem solving or coding. I also try to
+keep the study time (without breaks) below 7-8 hours each day, and I will
+almost never study after dinner. That's very personal, some people might prefer
+studying fewer days a week and more hours, or studying during the night.
+
+
+## Conclusions
+
+That's it for my studying advice. Not many novel ideas, just focusing on what's
+important and allocating a lot of time. Of course, you will need some balance
+to make studying sustainable. I did all of this while going to the gym and
+spending time with friends regularly. I wish you good luck with your studies
+and a good time during your university years :)
