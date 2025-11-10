@@ -1,4 +1,109 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2025-10-18T10:53:49+02:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><entry><title type="html">An introduction to contrastive techniques for representation learning</title><link href="https://pablomirallesg.com/blog/contrastive-learning" rel="alternate" type="text/html" title="An introduction to contrastive techniques for representation learning" /><published>2024-07-16T00:00:00+02:00</published><updated>2024-07-16T00:00:00+02:00</updated><id>https://pablomirallesg.com/blog/contrastive-learning</id><content type="html" xml:base="https://pablomirallesg.com/blog/contrastive-learning"><![CDATA[<p>Earlier this year I had to write a technical report on the topic of contrastive
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2025-11-10T09:36:02+01:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><entry><title type="html">Multivariate Hawkes process with Jax</title><link href="https://pablomirallesg.com/blog/hawkes-multivariate" rel="alternate" type="text/html" title="Multivariate Hawkes process with Jax" /><published>2025-11-09T00:00:00+01:00</published><updated>2025-11-09T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/hawkes-multivariate</id><content type="html" xml:base="https://pablomirallesg.com/blog/hawkes-multivariate"><![CDATA[<p>Recently, a colleague was giving a seminar on his ongoing work, and he was looking for an efficient implementation to train a multivariate Hawkes process. I though that it was a cool project to tackle with deep learning frameworks!</p>
+<h2 id="definition">Definition</h2>
+<p>A <strong>multivariate Hawkes process</strong> is a <em>self-exciting point process</em> that models how multiple types of events influence each other over time. Formally, we have $K$ event types, with baseline rates $\mu_i$, excitation matrix $\alpha_{ij}$, and exponential decay rate $\beta_{ij}$ (often shared as a single $\beta$). Each event type has a <strong>conditional intensity</strong> function:</p>
+
+\[\lambda_i(t) = \mu_i + \sum_{j=1}^{K} \sum_{t_k^{(j)} &lt; t} \alpha_{ij} e^{-\beta_{ij} (t - t_k^{(j)})}\]
+
+<p>where $t_k^{(j)}$  are the times of past events of type j.
+The intuition is that each past event of type $j$ adds an <strong>exponential bump</strong> to $\lambda_i(t)$ that:</p>
+<ul>
+  <li>starts at height $\alpha_{ij}&gt;0$ immediately after the event,</li>
+  <li>decays continuously at rate $\beta_{ij}$,</li>
+  <li>and is added on top of the baseline $\mu_i$.</li>
+</ul>
+
+<p>The decay function can be substituted by any other function with similar properties, but in this implementation we assume the exponential function for convenience, as well as a single $\beta$ decay parameter. We also consider a low rank decomposition of the excitation matrix $\alpha_{ij} = u_i^T v_j$, or even $u=v$ if we assume symmetry.</p>
+
+<h2 id="training-with-maximum-likelihood-estimation">Training with maximum likelihood estimation</h2>
+<p>For observed events  ${(t_m, c_m)}_{m=1}^{N}$, where $t_m$ is the event time, $c_m \in {1,\dots,K}$ is the event type and $T$ is the observation horizon, the <strong>log-likelihood</strong> of a multivariate Hawkes process is:</p>
+
+\[\log \mathcal{L} = \sum_{m=1}^{N} \log \lambda_{c_m}(t_m) - \sum_{i=1}^{K} \int_0^{T} \lambda_i(t) , dt\]
+
+<p>With the exponential kernel the intensity functions is</p>
+
+\[\lambda_i(t) = \mu_i + \sum_{j=1}^K \sum_{t_k^{(j)} &lt; t} \alpha_{ij} e^{-\beta (t - t_k^{(j)})},\]
+
+<p>and in this case the integral term has a <strong>closed form</strong>, avoiding numerical integration:</p>
+
+\[\int_0^T \lambda_i(t) dt = \mu_i T + \sum_{j=1}^K \sum_{t_k^{(j)} &lt; T} \frac{\alpha_{ij}}{\beta} \left(1 - e^{-\beta (T - t_k^{(j)})}\right).\]
+
+<p>To train this model, you compute the log-likelihood above, and then maximize it (or equivalently, minimize the negative log-likelihood) with respect to the parameters:</p>
+
+\[\Theta = { \mu_i, \alpha_{ij}, \beta }\]
+
+<p>This can be done with any deep learning framework. We will be using Jax in this case instead of PyTorch, because I want to learn it and because it implements fast parallel scans out of the box.</p>
+
+<h2 id="derivations">Derivations</h2>
+<p>We now consider the log-likelihood and try to make some derivations that make the vectorized implementation with Jax easy.</p>
+
+\[\log \mathcal{L} = \underbrace{\sum_{m=1}^{N} \log \lambda_{c_n}(t_n)}_{\text{A: log-likelihood of observed events}} - \underbrace{\sum_{i=1}^{K} \int_0^{T} \lambda_i(t) \, dt}_{\text{B: integral over intensities}}\]
+
+<p><strong>Derivation of the second term</strong></p>
+
+<p>Let’s consider the second term. First, since we have the exponential kernel:</p>
+
+\[\int_0^T \lambda_i(t) dt = \mu_i T + \sum_{j=1}^K \sum_{t_k^{(j)} &lt; T} \frac{\alpha_{ij}}{\beta} \left(1 - e^{-\beta (T - t_k^{(j)})}\right).\]
+
+<p>Therefore, the second term becomes (considering $\alpha_{ij}=u_i^T v_j$):</p>
+
+\[\begin{align*} B &amp;= T \cdot \sum_{i=1}^K \mu_i + \sum_{i=1}^K \sum_{j=1}^K \sum_{t_k^{(j)}&lt;T} \frac{\alpha_{ij}}{\beta}\!\left(1-e^{-\beta\,(T-t_k^{(j)})}\right) \\ &amp;= T \cdot \sum_{i=1}^K \mu_i + \frac{1}{\beta} \sum_{i=1}^K u_i^T \left( \sum_{j=1}^K v_j \left[ \sum_{c_n=j} (1-e^{-\beta\,(T-t_n)}) \right] \right) \\ &amp;= T \cdot \sum_{i=1}^K \mu_i + \frac{1}{\beta} \left(\sum_{i=1}^K u_i^T\right) \left( \sum_{n=1}^N v_{c_n} (1-e^{-\beta\,(T-t_n)})\right) \end{align*}\]
+
+<p>This is simple to vectorize:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">v_mark</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">marks</span><span class="p">]</span>  <span class="c1"># (N, R)
+</span><span class="n">summed_u</span> <span class="o">=</span> <span class="n">jnp</span><span class="p">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (R,)
+</span><span class="n">exp_term</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">jnp</span><span class="p">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="n">jnp</span><span class="p">.</span><span class="n">clip</span><span class="p">(</span><span class="n">T</span> <span class="o">-</span> <span class="n">times</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>  <span class="c1"># (N,)
+</span><span class="n">summed_v_mark</span> <span class="o">=</span> <span class="n">jnp</span><span class="p">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">v_mark</span> <span class="o">*</span> <span class="n">exp_term</span><span class="p">[:,</span> <span class="bp">None</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># (R,)
+</span><span class="n">B</span> <span class="o">=</span> <span class="n">jnp</span><span class="p">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span> <span class="o">*</span> <span class="n">T</span> <span class="o">+</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">beta</span><span class="p">)</span> <span class="o">*</span> <span class="n">jnp</span><span class="p">.</span><span class="n">dot</span><span class="p">(</span><span class="n">summed_u</span><span class="p">,</span> <span class="n">summed_v_mark</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p><strong>Derivation of the first term and naive scan</strong></p>
+
+<p>The first term is a bit more difficult. Let’s consider each $\lambda_{c_n} (t_n)$, and assume that the times $(t_n)_n$ are sorted:</p>
+
+\[\begin{align*} \lambda_{c_n}(t_n) &amp;= \mu_{c_n} + \sum_{j=1}^K \sum_{\substack{t_m&lt;t_n \\ c_m=j}} u_{c_n}^T v_j \exp(-\beta(t_n-t_m)) \\ &amp;= \mu_{c_n} + \sum_{m=1}^{n-1} u_{c_n}^T v_{c_m} \cdot \exp (-\beta(t_n-t_m)) \\ &amp;= \mu_{c_n} + u_{c_n}^T \sum_{m=1}^{n-1} v_{c_m} \cdot \exp (-\beta(t_n-t_m)) \end{align*}\]
+
+<p>Now, can we parallelize this computation for all n? We can do the following next step:</p>
+
+\[\begin{align*} \lambda_{c_n}(t_n) &amp;= \mu_{c_n} + u_{c_n}^T \sum_{m=1}^{n-1} v_{c_m} \cdot \exp (-\beta(t_n-t_m)) \\ &amp;= \mu_{c_n} + \left( u_{c_n}^T \cdot \exp(-\beta t_n)\right) \sum_{m=1}^{n-1} v_{c_m} \cdot \exp (\beta t_m). \end{align*}\]
+
+<p>The sum term becomes a <code class="language-plaintext highlighter-rouge">cumsum</code> operation, which is a simple scan already implemented in many frameworks. However, the term $\exp(\beta t_m)$ can become very large, and this implementation could become numerically unstable.</p>
+
+<p><strong>Non-naive scan</strong></p>
+
+<p>Let’s consider the quantity</p>
+
+\[S_n = \sum_{m=1}^{n} v_{c_m} \cdot \exp (-\beta(t_n-t_m)),\]
+
+<p>Then:</p>
+
+\[\begin{align*} S_n &amp;= v_{c_n} + \sum_{m=1}^{n-1} v_{c_m} \cdot \exp (-\beta(t_n-t_m)) \\ &amp;= v_{c_n} + \sum_{m=1}^{n-1} v_{c_m} \cdot \exp (-\beta((t_n-t_{n-1}) + (t_{n-1}-t_m))) \\ &amp;= v_{c_n} + \exp(-\beta(t_n-t_{n-1}))\sum_{m=1}^{n-1} v_{c_m} \cdot \exp (-\beta(t_{n-1}-t_m)) \\ &amp;= v_{c_n} + \exp(-\beta(t_n-t_{n-1})) \cdot S_{n-1} .\end{align*}\]
+
+<p>This can be seen as a reduction for the operator</p>
+
+\[\begin{array}{rcl} *: &amp; (\mathbb{R}^d \times \mathbb R) \times (\mathbb{R}^d \times \mathbb R) &amp; \longrightarrow \mathbb{R}^d \times \mathbb R \\[3pt] &amp; (v_1, t_1),(v_2,t_2) &amp; \longmapsto \left( v_2 + \exp(-\beta(t_2-t_1)) \cdot v_1 , t_2\right), \end{array}\]
+
+<p>which is associative, and this can be implemented as a parallel scan, like the cumulative sum. The difference now is that since the timestamps are ordered, the quantities $\exp(-\beta (t_2-t_1))$ with $t_2&gt;t_1$ are always less than $1$, and they are bounded and controlled. We can now derive the final implementation:</p>
+
+\[\begin{align*} \lambda_{c_n}(t_n) &amp;= \mu_{c_n} + u_{c_n}^T \sum_{m=1}^{n-1} v_{c_m} \cdot \exp (-\beta(t_n-t_m)) \\ &amp;= \mu_{c_n} + u_{c_n}^T (S_n - v_{c_n}) \end{align*}\]
+
+<p>The problem now is that this scan is not implemented natively in PyTorch, and that is why we are using Jax:</p>
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">u_mark</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">marks</span><span class="p">]</span>  <span class="c1"># (N, R)
+</span><span class="n">v_mark</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">marks</span><span class="p">]</span>  <span class="c1"># (N, R)
+</span><span class="n">mu_mark</span> <span class="o">=</span> <span class="n">mu</span><span class="p">[</span><span class="n">marks</span><span class="p">]</span>  <span class="c1"># (N,)
+</span>
+<span class="k">def</span> <span class="nf">_scan_op</span><span class="p">(</span><span class="n">e1</span><span class="p">,</span> <span class="n">e2</span><span class="p">):</span>
+    <span class="p">(</span><span class="n">u1</span><span class="p">,</span> <span class="n">t1</span><span class="p">),</span> <span class="p">(</span><span class="n">u2</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span> <span class="o">=</span> <span class="n">e1</span><span class="p">,</span> <span class="n">e2</span> <span class="c1"># each is (R,), scalar
+</span>    <span class="n">decay</span> <span class="o">=</span> <span class="n">jnp</span><span class="p">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">beta</span> <span class="o">*</span><span class="p">(</span><span class="n">t2</span> <span class="o">-</span> <span class="n">t1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">u2</span> <span class="o">+</span> <span class="n">decay</span><span class="p">[:,</span> <span class="bp">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">u1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+<span class="n">scan_vals</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">lax</span><span class="p">.</span><span class="n">associative_scan</span><span class="p">(</span><span class="n">_scan_op</span><span class="p">,</span> <span class="p">(</span><span class="n">u_mark</span><span class="p">,</span> <span class="n">times</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">lambdas</span> <span class="o">=</span> <span class="n">mu_mark</span> <span class="o">+</span> <span class="n">jnp</span><span class="p">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">u_mark</span> <span class="o">*</span> <span class="p">(</span><span class="n">scan_vals</span> <span class="o">-</span> <span class="n">v_mark</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">A</span> <span class="o">=</span> <span class="n">jnp</span><span class="p">.</span><span class="nb">sum</span><span class="p">(</span><span class="n">jnp</span><span class="p">.</span><span class="n">log</span><span class="p">(</span><span class="n">lambdas</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h2 id="complete-code">Complete code</h2>
+<p>The full code with a training example is provided at <a href="https://github.com/pablomiralles22/multiprocess-hawkes-jax">pablomiralles22/multiprocess-hawkes-jax</a>.</p>]]></content><author><name></name></author><summary type="html"><![CDATA[Implementing the training of a multivariate Hawkes process efficiently with Jax]]></summary></entry><entry><title type="html">An introduction to contrastive techniques for representation learning</title><link href="https://pablomirallesg.com/blog/contrastive-learning" rel="alternate" type="text/html" title="An introduction to contrastive techniques for representation learning" /><published>2024-07-16T00:00:00+02:00</published><updated>2024-07-16T00:00:00+02:00</updated><id>https://pablomirallesg.com/blog/contrastive-learning</id><content type="html" xml:base="https://pablomirallesg.com/blog/contrastive-learning"><![CDATA[<p>Earlier this year I had to write a technical report on the topic of contrastive
 learning
 (<a href="/assets/pdf/projects/contrastive-learning-report/report.pdf">link</a>).
 This post is an effort to create something more digestible and adequate for
