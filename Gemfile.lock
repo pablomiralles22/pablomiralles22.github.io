@@ -129,6 +129,7 @@ DEPENDENCIES
   jekyll-figure
   jekyll-imagemagick
   jekyll-scholar
+  rouge
   tzinfo (~> 1.2)
   tzinfo-data
   wdm (~> 0.1.1)

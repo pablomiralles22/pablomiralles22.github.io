@@ -63,6 +63,9 @@ whitelist:
 #   - vendor/ruby/
 
 markdown: kramdown
+kramdown:
+  input: GFM
+highlighter: rouge
 
 compress_html:
   clippings: all
