@@ -37,6 +37,7 @@ plugins:
   - jekyll/scholar
   - jekyll-figure
   - jekyll-imagemagick
+  - jekyll-sitemap
 
 whitelist:
   - jekyll-redirect-from

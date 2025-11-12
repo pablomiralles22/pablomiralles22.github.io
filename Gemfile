@@ -18,6 +18,7 @@ group :jekyll_plugins do
   gem "jekyll-scholar"
   gem "jekyll-imagemagick"
   gem "jekyll-figure"
+  gem "jekyll-sitemap"
 end
 
 # Windows and JRuby does not include zoneinfo files, so bundle the tzinfo-data gem
