@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Multivariate Hawkes process with Jax
-description: Implementing the training of a multivariate Hawkes process efficiently with Jax
+description: Implementing the training of a multivariate Hawkes process efficiently with Jax.
 date: 2025-11-09
 ---
 

@@ -24,7 +24,7 @@ functions, data generation techniques, negative examples and applications.
 
 Consider some neural network such as the following:
 
-{% include figure.liquid path="assets/img/posts/2024_contrastive-learning/nn_repr.pdf" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/nn_repr.pdf" class="img-fluid rounded z-depth-1" %}
 
 Neural networks are the composition of transformations, where every
 intermediate layer applies a parameterized function to the input coming from
@@ -58,7 +58,7 @@ network. This is called **transfer learning**: first **pretraining** for a
 head) on the **downstream task** we are actually interested in solving. The
 following diagram shows this process.
 
-{% include figure.liquid path="assets/img/posts/2024_contrastive-learning/transfer-learning.drawio.pdf" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.drawio.pdf" class="img-fluid rounded z-depth-1" %}
 
 ### Learning very general representations: self-supervised learning
 
@@ -124,7 +124,7 @@ from these techniques are:
    inference on tasks it wasn't trained for without any need for fine-tuning.
    We have all seen ChatGPT performing a myriad of different tasks, even though
    it was only trained to do next-token prediction. Another example is
-   CLIP {% cite radford2021LearningTransferable --file 2024_contrastive-learning %}. This model was trained
+   CLIP {% cite radford2021LearningTransferable --file 2024-07-16-contrastive-learning %}. This model was trained
    using contrastive techniques. It encodes text and images into a common
    feature vector space. If a text describes an image properly, then their
    representation should be close together in the space. This allows us to
@@ -209,7 +209,7 @@ Let’s establish a framework and notation for the rest of the text.
 
 This structure is shown graphically for two examples in the following diagram:
 
-{% include figure.liquid path="assets/img/posts/2024_contrastive-learning/contrastive-learning.drawio.pdf" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/contrastive-learning.drawio.pdf" class="img-fluid rounded z-depth-1" %}
 
 ### Loss functions in contrastive learning
 
@@ -222,7 +222,7 @@ example to the same vector. Let's take a look at some common functions.
 #### Pair loss
 
 Let $x \in \mathcal{X}$ be an example and $z$ its embedding in the metric
-space. The *pair loss* {% cite chopra2005LearningSimilarity --file 2024_contrastive-learning %} is defined
+space. The *pair loss* {% cite chopra2005LearningSimilarity --file 2024-07-16-contrastive-learning %} is defined
 for pairs of examples, differing for positive and negative ones: 
 
 $$
@@ -245,10 +245,10 @@ $\varepsilon$. The function is plotted in the following figure.
 {% figure [caption:"Plot of the pair loss function for positive (left) and negative (right) examples. Arrows represent gradient direction and norm."] [class:"class1 class2"] %}
 <div style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;">
     <div style="flex: 1; text-align: center;">
-        {% include figure.liquid loading="eager" path="assets/img/posts/2024_contrastive-learning/pair_loss_pos.pdf" zoomable=true %}
+        {% include figure.liquid loading="eager" path="assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos.pdf" zoomable=true %}
     </div>
     <div style="flex: 1; text-align: center;">
-        {% include figure.liquid loading="eager" path="assets/img/posts/2024_contrastive-learning/pair_loss_neg.pdf" zoomable=true %}
+        {% include figure.liquid loading="eager" path="assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg.pdf" zoomable=true %}
     </div>
 </div>
 {% endfigure %}
@@ -256,7 +256,7 @@ $\varepsilon$. The function is plotted in the following figure.
 
 #### Triplet loss
 
-The *triplet loss* {% cite schroff2015FaceNetunified --file 2024_contrastive-learning %} tries instead to
+The *triplet loss* {% cite schroff2015FaceNetunified --file 2024-07-16-contrastive-learning %} tries instead to
 enforce that the distance between the anchor and positive examples is smaller
 than the distance between the anchor and negative examples, with a difference
 margin of at least $\varepsilon$:
@@ -276,7 +276,7 @@ ways in which images can be different than similar.
 #### Lifted Embedding Loss
 
 Increasing the number of interactions between instances at once, Song et al.
-proposed the *Lifted Embedding loss* {% cite song2016DeepMetric --file 2024_contrastive-learning %}. If
+proposed the *Lifted Embedding loss* {% cite song2016DeepMetric --file 2024-07-16-contrastive-learning %}. If
 $x_1, \cdots, x_n$ is our set of examples, and $P$ and $N$ are the sets of pairs
 of examples that are considered similar and dissimilar, respectively, then the
 loss function is given as
@@ -323,7 +323,7 @@ $$
 where $\sigma$ is the sigmoid function. If $q^+(\cdot, \cdot)$ and $q^-(\cdot,
 \cdot)$ are the joint probability density functions of similar and dissimilar
 instances, respectively, then the Binary Noise-Contrastive Estimation
-(NCE) {% cite gutmann2010Noisecontrastiveestimation --file 2024_contrastive-learning %} loss is given by
+(NCE) {% cite gutmann2010Noisecontrastiveestimation --file 2024-07-16-contrastive-learning %} loss is given by
 minimizing the expected negative log-likelihood:
 
 $$\begin{gathered}
@@ -392,7 +392,7 @@ between the similarity of positive and negative examples already produce a
 high likelihood. A large value of $\tau$ forces the difference in similarity to
 be large. This parameter can be viewed as the margin parameter in previous
 functions. This modified InfoNCE loss is called *NT-Xent* (normalized
-temperature-scaled cross entropy loss) {% cite chen2020SimpleFramework --file 2024_contrastive-learning %}.
+temperature-scaled cross entropy loss) {% cite chen2020SimpleFramework --file 2024-07-16-contrastive-learning %}.
 
 ### Generating data for contrastive learning
 
@@ -444,7 +444,7 @@ following are just some examples:
 
     In the case of images, we find transformations such as rotations,
     translations, cutouts, cropping and resizing, blurring, applying noise...
-    These were used, for example, in {% cite chen2020SimpleFramework --file 2024_contrastive-learning %}.
+    These were used, for example, in {% cite chen2020SimpleFramework --file 2024-07-16-contrastive-learning %}.
 
     Textual data is a bit more complex. Fang et al.<d-cite
     key="fang2020CERTContrastive"/> use automatic back-translation, that is,
@@ -454,7 +454,7 @@ following are just some examples:
     words, adding noise, changing words for synonyms...
 
     Careful exploration of data augmentation techniques can be very important.
-    For example, Chen et al. {% cite chen2020SimpleFramework --file 2024_contrastive-learning %} found that
+    For example, Chen et al. {% cite chen2020SimpleFramework --file 2024-07-16-contrastive-learning %} found that
     the training of SimCLR was very sensitive to the choice of data
     augmentation techniques.
 
@@ -476,7 +476,7 @@ examples. We already gave a theoretical reason for this: if negative examples
 were not used, a trivial representation mapping everything to one vector would
 obtain perfect performance. There is empirical evidence showing that
 performance is increased from contrasting with many negative examples. For
-example, Chen et al. {% cite chen2020SimpleFramework --file 2024_contrastive-learning %} found that training
+example, Chen et al. {% cite chen2020SimpleFramework --file 2024-07-16-contrastive-learning %} found that training
 with very large batch sizes greatly improved performance. In their setting, all
 other examples in the batch were considered as negative, and thus the number of
 negatives per example scaled with the batch size.
@@ -508,12 +508,12 @@ encoder is updated in the training process, the representations on-disk get
 outdated. The main difference between approaches lies in the method to keep
 these offline representations updated as the encoder is optimized.
 
-Wu et al. {% cite wu2018UnsupervisedFeature --file 2024_contrastive-learning %} sampled negative
+Wu et al. {% cite wu2018UnsupervisedFeature --file 2024-07-16-contrastive-learning %} sampled negative
 representations randomly from a memory bank with the full dataset. At the end
 of each epoch, all the representations in the memory bank are updated with the
 new checkpoint of the model.
 
-He et al. {% cite he2020MomentumContrast --file 2024_contrastive-learning %} proposed keeping a queue with
+He et al. {% cite he2020MomentumContrast --file 2024-07-16-contrastive-learning %} proposed keeping a queue with
 a fixed number of mini-batches. After processing a mini-batch, the new examples
 are added to the queue, and the oldest mini-batch is removed. The queue is used
 to sample negative examples for the current mini-batch. Since this alone
@@ -540,7 +540,7 @@ Conceptually, we might intuit that it is more difficult for a model to
 distinguish between a dog and a cat than between a dog and a building. In
 practice, we could select hard negative examples based on their representation.
 Examples with close representations are difficult to distinguish for the model.
-Kalantidis et al. {% cite kalantidis2020HardNegative --file 2024_contrastive-learning %} make use of this,
+Kalantidis et al. {% cite kalantidis2020HardNegative --file 2024-07-16-contrastive-learning %} make use of this,
 together with some data mixing techniques.
 
 However, hard negative mining has some disadvantages, such as the
@@ -554,7 +554,7 @@ If the only reason to use negative examples is to prevent the
 representations from collapsing onto one single vector, then other
 techniques to prevent it could allow us to remove negative examples.
 
-The work by Grill et al. {% cite grill2020BootstrapYour --file 2024_contrastive-learning %} goes in this
+The work by Grill et al. {% cite grill2020BootstrapYour --file 2024-07-16-contrastive-learning %} goes in this
 line. They used two neural networks, an online (predictive) network and a
 target network, similar to Deep Q Learning. They use only positive examples,
 and for each pair the online network tries to predict the metric representation
@@ -571,11 +571,11 @@ not exactly according to the gradient of the loss with respect to
 $\theta_{target}$. They did get good performance in downstream image
 classification tasks. There is some discussion on informal mediums (see 
 [this blog post](https://imbue.com/research/2020-08-24-understanding-self-supervised-contrastive-learning/)
-and preprint {% cite richemond2020BYOLworks --file 2024_contrastive-learning %}) on whether batch
+and preprint {% cite richemond2020BYOLworks --file 2024-07-16-contrastive-learning %}) on whether batch
 normalization is the cause of preventing representational collapse, but I
 haven’t found peer-reviewed work on the topic.
 
-SimSiam {% cite chen2021ExploringSimple --file 2024_contrastive-learning %} is an even simpler technique
+SimSiam {% cite chen2021ExploringSimple --file 2024-07-16-contrastive-learning %} is an even simpler technique
 that successfully avoided representational collapse. I deviate from their
 notation in the explanation to keep the one in this post. If $\hat{e}=e \circ
 h$ is the complete encoder onto the metric space, and $\hat{h}$ is an additional
@@ -600,7 +600,7 @@ how this asymmetry through the additional head and stopping gradient
 propagation achieves its objective of avoiding representation collapse is not
 fully understood (to the best of my knowledge).
 
-Bardes et al. {% cite bardes2022vicreg --file 2024_contrastive-learning %} proposed a much more intuitive
+Bardes et al. {% cite bardes2022vicreg --file 2024-07-16-contrastive-learning %} proposed a much more intuitive
 approach, using VICReg (Variance-Invariance-Covariance regularization). Let
 $(z_1,z_1^\prime),\cdots,(z_n,z_n^\prime)$ be $d$-dimensional metric
 representations of positive pairs in a single batch. Let $C(Z)$ be the
@@ -660,7 +660,7 @@ discuss here.
 The first advantage is that it provides other training ideas for representation
 learning. These techniques have shown great success, reaching state-of-the-art
 performance in semi-supervised and transfer learning. The SimCLR model for
-images {% cite chen2020SimpleFramework --file 2024_contrastive-learning %} is an example of this.
+images {% cite chen2020SimpleFramework --file 2024-07-16-contrastive-learning %} is an example of this.
 
 A second advantage is the metric representation that they learn. These
 representations can later be used in very efficient<d-footnote>There are
@@ -677,7 +677,7 @@ and that we can readily apply to any search application.
 Although not exclusive to contrastive learning, another advantage is that these
 techniques allow us to align different encoders in a common representation
 space, in particular encoders of different modalities. This is the case of the
-CLIP {% cite radford2021LearningTransferable --file 2024_contrastive-learning %} model we have already
+CLIP {% cite radford2021LearningTransferable --file 2024-07-16-contrastive-learning %} model we have already
 talked about.
 
 Finally, models trained through contrastive learning have zero-shot
@@ -703,4 +703,4 @@ doubt in hitting me up with any feedback or corrections!
 
 ## References
 
-{% bibliography --file 2024_contrastive-learning %}
+{% bibliography --file 2024-07-16-contrastive-learning %}
