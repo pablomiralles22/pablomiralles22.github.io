@@ -34,7 +34,7 @@ In **model parallelism**, each device holds only _part_ of the model, and the ex
 There are several advantages and disadvantages for both options. Tensor parallelism enables very big layers to be run and doesn't need micro-batching, but it needs a lot of communication between devices, requiring high-bandwidth/low-latency interconnects (e.g. NVLink). On the other hand, pipeline parallelism needs minimal communication between devices, but requires micro-batching and balanced stages to avoid idleness.
 
 All types of parallelism discussed thus far are depicted in the following figure:
-{% include figure.liquid path="assets/img/posts/2025-11-19-llm-efficiency/parallelism.drawio.pdf" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2025-11-19-llm-efficiency/parallelism.drawio.svg" class="img-fluid rounded z-depth-1" %}
 
 One final note is that all of these types of parallelism can be combined. For example, we could have two copies of the model, each one using three devices via pipeline parallelism, requiring six GPUs in total.
 

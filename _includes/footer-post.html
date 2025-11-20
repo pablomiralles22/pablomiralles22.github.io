@@ -8,13 +8,14 @@
   </div>
 </footer>
 
-<script type="text/javascript" id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"> </script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"> </script>
 <script>
 MathJax = {
-    tex: {
-    inlineMath: [['$', '$'], ['$`', '`$'], ['\\(', '\\)']],
-    displayMath: [['```math', '```'], ['$$', '$$'], ['\\[', '\\]']]
-    }
+  tex: {
+    inlineMath: {'[+]': [['$', '$']]},
+    displayMath: {'[+]': [['$$', '$$']]}
+  },
+  svg: { fontCache: 'global' }
 };
 </script>
 <link rel="stylesheet" href="/assets/css/syntax.css">

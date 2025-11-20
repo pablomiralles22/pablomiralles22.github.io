@@ -58,7 +58,7 @@ network. This is called **transfer learning**: first **pretraining** for a
 head) on the **downstream task** we are actually interested in solving. The
 following diagram shows this process.
 
-{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.drawio.pdf" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.drawio.svg" class="img-fluid rounded z-depth-1" %}
 
 ### Learning very general representations: self-supervised learning
 
@@ -209,7 +209,7 @@ Let’s establish a framework and notation for the rest of the text.
 
 This structure is shown graphically for two examples in the following diagram:
 
-{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/contrastive-learning.drawio.pdf" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/contrastive-learning.drawio.svg" class="img-fluid rounded z-depth-1" %}
 
 ### Loss functions in contrastive learning
 

@@ -42,6 +42,24 @@ plugins:
 whitelist:
   - jekyll-redirect-from
 
+imagemagick:
+  enabled: true
+  widths:
+    - 480
+    - 800
+    - 1400
+  input_directories:
+    - assets/img/
+  input_formats:
+    - ".jpg"
+    - ".jpeg"
+    - ".png"
+    - ".tiff"
+    - ".gif"
+    - ".pdf"
+  output_formats:
+    webp: "-quality 85"
+
 
 # Exclude from processing.
 # The following items will not be processed, by default.
