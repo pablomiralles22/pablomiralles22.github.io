@@ -1,4 +1,241 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2025-11-12T12:27:18+01:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><entry><title type="html">Multivariate Hawkes process with Jax</title><link href="https://pablomirallesg.com/blog/hawkes-multivariate" rel="alternate" type="text/html" title="Multivariate Hawkes process with Jax" /><published>2025-11-09T00:00:00+01:00</published><updated>2025-11-09T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/hawkes-multivariate</id><content type="html" xml:base="https://pablomirallesg.com/blog/hawkes-multivariate"><![CDATA[<p>Recently, a colleague was giving a seminar on his ongoing work, and he was looking for an efficient implementation to train a multivariate Hawkes process. I though that it was a cool project to tackle with deep learning frameworks!</p>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2025-12-11T12:01:13+01:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><entry><title type="html">Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead</title><link href="https://pablomirallesg.com/blog/fused-matmul-logsumexp" rel="alternate" type="text/html" title="Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead" /><published>2025-12-11T00:00:00+01:00</published><updated>2025-12-11T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/fused-matmul-logsumexp</id><content type="html" xml:base="https://pablomirallesg.com/blog/fused-matmul-logsumexp"><![CDATA[<h3 id="motivation">Motivation</h3>
+<p>In my research I have worked with methods that involve retrieving the log-probabilities of an input text from a large language model. Let me first introduce what I mean exactly and why this is useful.</p>
+
+<p>Consider an input text tokenized as a sequence $t_1,\dots,t_L$. Each token is mapped to an initial embedding, forming the initial hidden-state matrix $\mathrm{HS}^0 \in \mathbb{R}^{L \times D}$. The transformer then processes these representations and produces the contextualized final hidden states</p>
+
+\[f(\mathrm{HS}^0;\theta) = \mathrm{HS}^{\text{final}} \in \mathbb{R}^{L \times D}.\]
+
+<p>A final linear layer with weights $W \in \mathbb{R}^{V \times D}$ and bias $b \in \mathbb{R}^{V}$ is applied to obtain the logits</p>
+
+\[\mathrm{logits} = \mathrm{HS}^{\text{final}}\cdot W^T + b \in \mathbb{R}^{L \times V}.\]
+
+<p>Applying the softmax along the vocabulary dimension yields the probability matrix</p>
+
+\[P = \mathrm{softmax}(\mathrm{logits},\ \mathrm{dim}=1) \in \mathbb{R}^{L \times V}.\]
+
+<p>This probability matrix encodes the model’s next-token predictions. For each position $i \in {1,\dots,L}$, the vector $P_i \in \mathbb{R}^{V}$ is a valid probability distribution (non-negative and summing to one) over the vocabulary. Its $v$-th component represents the model’s estimated probability that the next token is the $v$-th vocabulary item, conditioned on the preceding context $t_1,\dots,t_i$.</p>
+
+<p>During the generation process we only compute the final probability vector to sample the new token to be appended. However, we can apply the model to a full input text and study these probabilities across tokens. This is useful in distinguishing AI-generated text (we expect these texts to score higher when passed through the LLM), and we have also leveraged them for human authorship problems.</p>
+
+<h3 id="computational-problems">Computational problems</h3>
+<p>The vocabulary of modern LLMs is very large (100K–300K tokens), and the matrix $P \in \mathbb{R}^{L \times V}$ becomes extremely large for long texts, especially in batched settings. Often we only need the log-probability of the token that actually occurred next in the sequence; i.e., we want the sequence</p>
+
+\[\log P_{1, t_2},\ \log P_{2, t_3},\ \dots,\ \log P_{L-1, t_L}.\]
+
+<p>If we compute these values smartly, we avoid instantiating the full probability or logit matrix in memory!</p>
+
+<h3 id="derivations-and-algorithm">Derivations and algorithm</h3>
+
+<p>Now, we can consider the following equivalence:</p>
+
+\[\log P
+= \mathrm{logsoftmax}(\mathrm{logits},\ \mathrm{dim}=1)
+= \mathrm{logits} - \mathrm{logsumexp}(\mathrm{logits},\ \mathrm{dim}=1),\]
+
+<p>and therefore</p>
+
+\[\log P_{i, t_{i+1}}
+= \mathrm{logits}_{i, t_{i+1}} - \mathrm{logsumexp}(\mathrm{logits}_i),\]
+
+<p>The first component is actually very easy to simplify:</p>
+
+\[\mathrm{logits}_{i, t_{i+1}} =
+\mathrm{HS}^{\text{final}}_i \cdot W_{t_{i+1}} + b_{t_{i+1}}.\]
+
+<p>The second term is a reduction across the vocabulary dimension. In other words, $\mathrm{logsumexp}(\mathrm{logits},\ \mathrm{dim}=1)$ yields a length-$L$ vector, not a massive matrix. Naively, you’d instantiate the full logits to compute <code class="language-plaintext highlighter-rouge">logsumexp</code>, which is expensive. Instead, we can fuse the linear layer that produces logits with the <code class="language-plaintext highlighter-rouge">logsumexp</code> reduction in a single kernel.</p>
+
+<h3 id="tiled-matmul--online-log-sum-exp">Tiled matmul &amp; online log-sum-exp</h3>
+<p>Consider an input matrix $A\in \mathbb R^{M \times K}$, a weight matrix $B\in \mathbb R^{N \times K}$ (we ignore the bias vector for simplicity here). We want to implement the following:</p>
+
+\[C = \mathrm{logsumexp} (A \cdot B^T, \mathrm{dim} = 1),\]
+
+<p>or, in non-vectorial form:</p>
+
+\[C_i = \log \sum_{j=1}^N \exp(A_i \cdot B_j^T); \qquad i=1,\dots M.\]
+
+<p>As with general matrix multiplication, we tile the matrices; each tile pair is handled by a tensor core. While computing tile products, we apply the exponential and maintain the running sum of exponentials across the $N$ dimension. After accumulation along $N$, we take the logarithm.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">BLOCK_SIZE_M</span><span class="p">):</span>
+    <span class="n">reduce_global</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">BLOCK_SIZE_M</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">BLOCK_SIZE_N</span><span class="p">):</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">BLOCK_SIZE_M</span><span class="p">,</span> <span class="n">BLOCK_SIZE_N</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">BLOCK_SIZE_K</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">m</span> <span class="p">:</span> <span class="n">m</span><span class="o">+</span><span class="n">BLOCK_SIZE_M</span><span class="p">,</span> <span class="n">k</span> <span class="p">:</span> <span class="n">k</span><span class="o">+</span><span class="n">BLOCK_SIZE_K</span><span class="p">]</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">[</span><span class="n">n</span> <span class="p">:</span> <span class="n">n</span><span class="o">+</span><span class="n">BLOCK_SIZE_N</span><span class="p">,</span> <span class="n">k</span> <span class="p">:</span> <span class="n">k</span><span class="o">+</span><span class="n">BLOCK_SIZE_K</span><span class="p">]</span>
+            <span class="n">acc</span> <span class="o">+=</span> <span class="n">dot</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="n">reduce_global</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">exp</span><span class="p">(</span><span class="n">acc</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">C</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">reduce_global</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>After dividing the algorithm in blocks, we can parallelize the program across tensor cores by blocks. Since we have a reduction dependency in both the $N$ and $K$ dimensions, we will parallelize across blocks in the $M$ dimension. However, there is an additional implementation detail that is typically implemented for numerical stability, which is mathematically equivalent but avoids computing the exponential of large numbers:</p>
+
+\[\begin{align}
+M &amp;= \max (A \cdot B^T,\ \mathrm{dim}=1) \\
+C &amp;= M + \mathrm{logsumexp} (A \cdot B^T - M,\ \mathrm{dim} = 1).
+\end{align}\]
+
+<p>This slightly complicates computation across $N$-tiles: we must track the online maximum and the sum of exponentials with the maximum subtracted. The algorithm:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">BLOCK_SIZE_M</span><span class="p">):</span>
+    <span class="n">reduce_global</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">BLOCK_SIZE_M</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">max_global</span> <span class="o">=</span> <span class="n">full</span><span class="p">((</span><span class="n">BLOCK_SIZE_M</span><span class="p">,),</span> <span class="nb">float</span><span class="p">(</span><span class="s">'-inf'</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">BLOCK_SIZE_N</span><span class="p">):</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">BLOCK_SIZE_M</span><span class="p">,</span> <span class="n">BLOCK_SIZE_N</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">K</span><span class="p">,</span> <span class="n">BLOCK_SIZE_K</span><span class="p">):</span>
+            <span class="n">a</span> <span class="o">=</span> <span class="n">A</span><span class="p">[</span><span class="n">m</span> <span class="p">:</span> <span class="n">m</span><span class="o">+</span><span class="n">BLOCK_SIZE_M</span><span class="p">,</span> <span class="n">k</span> <span class="p">:</span> <span class="n">k</span><span class="o">+</span><span class="n">BLOCK_SIZE_K</span><span class="p">]</span>
+            <span class="n">b</span> <span class="o">=</span> <span class="n">B</span><span class="p">[</span><span class="n">n</span> <span class="p">:</span> <span class="n">n</span><span class="o">+</span><span class="n">BLOCK_SIZE_N</span><span class="p">,</span> <span class="n">k</span> <span class="p">:</span> <span class="n">k</span><span class="o">+</span><span class="n">BLOCK_SIZE_K</span><span class="p">]</span>
+            <span class="n">acc</span> <span class="o">+=</span> <span class="n">dot</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="n">max_block</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">acc</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">acc</span> <span class="o">-</span> <span class="n">max_block</span><span class="p">[:,</span> <span class="bp">None</span><span class="p">])</span>
+        <span class="n">reduce_block</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">acc</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Update global values
+</span>        <span class="n">max_global_new</span> <span class="o">=</span> <span class="n">maximum</span><span class="p">(</span><span class="n">max_global</span><span class="p">,</span> <span class="n">max_block</span><span class="p">)</span>
+        <span class="n">reduce_global</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">reduce_global</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="n">max_global</span> <span class="o">-</span> <span class="n">max_global_new</span><span class="p">)</span> <span class="o">+</span>
+            <span class="n">reduce_block</span> <span class="o">*</span> <span class="n">exp</span><span class="p">(</span><span class="n">max_block</span> <span class="o">-</span> <span class="n">max_global_new</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">max_global</span> <span class="o">=</span> <span class="n">max_global_new</span>
+    
+    <span class="n">C</span> <span class="o">=</span> <span class="n">max_global</span> <span class="o">+</span> <span class="n">log</span><span class="p">(</span><span class="n">reduce_global</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The full code is available at <a href="https://github.com/pablomiralles22/fused-matmul-logsumexp">pablomiralles22/fused-matmul-logsumexp</a>, and you will find a good description and instructions on how to use it on the <code class="language-plaintext highlighter-rouge">README</code> file.</p>
+
+<h3 id="benchmarking">Benchmarking</h3>
+<p>Consider an input matrix $X\in \mathbb R^{M \times K}$, a weight matrix $W\in \mathbb R^{N \times K}$, and a bias vector $b\in \mathbb R^{N}$. The following plots show execution time and peak memory for varying $M$ and $N$, comparing the fused implementation to a naive baseline:</p>
+
+<figure>
+  <picture>
+    <!-- Auto scaling with imagemagick -->
+    <!--
+      See https://www.debugbear.com/blog/responsive-images#w-descriptors-and-the-sizes-attribute and
+      https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
+    -->
+    
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_N-480.webp 480w,/assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_N-800.webp 800w,/assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_N-1400.webp 1400w," type="image/webp" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_N.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+  </picture>
+
+  
+</figure>
+
+<figure>
+  <picture>
+    <!-- Auto scaling with imagemagick -->
+    <!--
+      See https://www.debugbear.com/blog/responsive-images#w-descriptors-and-the-sizes-attribute and
+      https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
+    -->
+    
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_M-480.webp 480w,/assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_M-800.webp 800w,/assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_M-1400.webp 1400w," type="image/webp" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_M.png" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+  </picture>
+
+  
+</figure>]]></content><author><name></name></author><category term="deep-learning" /><category term="triton" /><summary type="html"><![CDATA[Fusing matmul + log-sum-exp in Triton to read LLM token log-probabilities efficiently (less memory, faster)]]></summary></entry><entry><title type="html">Running LLMs in low-resource settings</title><link href="https://pablomirallesg.com/blog/llm-efficiency" rel="alternate" type="text/html" title="Running LLMs in low-resource settings" /><published>2025-11-19T00:00:00+01:00</published><updated>2025-11-19T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/llm-efficiency</id><content type="html" xml:base="https://pablomirallesg.com/blog/llm-efficiency"><![CDATA[<p>In this post I try to create an index of the main ideas I have found to be able to run Large Language Models in my low-resource servers, and to run them as efficiently as possible. The point is not to explain every technique in-depth, but to provide an index with high-level descriptions. I have decided to divide them in three categories: <strong>general</strong>, <strong>training-specific</strong> and <strong>inference-specific</strong> optimizations.</p>
+
+<h2 id="general">General</h2>
+<h4 id="flashattention">FlashAttention</h4>
+<p>FlashAttention is an algorithm to compute</p>
+
+\[\mathrm{Attention}(K, Q, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d_k}} \right)V\]
+
+<p>efficiently in GPUs. As you probably know, this formula is quadratic in the input sequence length, making it problematic with very long sequences. FlashAttention remains quadratic in execution time, but avoids materializing the full $N \times N$ attention matrix in memory by computing the result in small tiles of $Q$, $K$ and $V$, and recomputing the result on the backward pass for training instead of storing the attention matrix. New versions with additional optimizations are available, but I think these are the most important one. We do not need to worry about setting this algorithm because all modern models use FlashAttention by default.</p>
+
+<h4 id="mixture-of-experts-moe">Mixture-of-experts (MoE)</h4>
+<p>A mixture-of-experts (MoE) model splits a neural network into many specialized <em>experts</em>, and uses a <strong>gating network</strong> to decide which experts handle each input. In the case of LLMs, this is typically applied in the feed-forward layers. Instead of scaling the MLP layers by widening them, the network uses several MLP experts and routes each token to a few of them (usually 1-2). This scales the number of effective parameters without increasing inference costs too much.</p>
+
+<p>As a side note, during training we must make sure that the tokens are spread across experts to avoid collapsing to a subset of experts. This can be done via an auxiliary load-balancing loss term, adding noise to the gating network that routes token, or other ideas.</p>
+
+<h4 id="datamodel-parallelism">Data/model parallelism</h4>
+<p>The concept of parallelism is key both to speed up execution and to be able to run large models that do not fit in a single GPU.</p>
+
+<p>The simplest type is <strong>data parallelism</strong>, where we store a full copy of the model in each GPU, and the data is sharded across GPUs and processed independently. For training it is then necessary to sync the gradients in all devices before performing the backward pass. This option is great to speed up execution, but it requires being able to fit the model in each device.</p>
+
+<p>In <strong>model parallelism</strong>, each device holds only <em>part</em> of the model, and the execution of the model is orchestrated across them. We can distinguish two types:</p>
+<ul>
+  <li><strong>Tensor parallelism</strong>. Each layer of the model is split across the devices. For example, the columns or rows in the weight matrix of a linear layer could be divided by GPU, and the result synced and concatenated between devices.</li>
+  <li><strong>Pipeline parallelism</strong>. The layers are grouped in stages and divided into the devices. For example, the first device could execute layers 1 to 4, and the second device layers 5 to 8. Of course, there is a dependency between the devices, both in the forward and in the backward pass. To avoid idle time, the batch is divided in micro-batches and the execution segmented across them. For example, the first device could execute the first micro-batch, and pass the result to the second device. While the second device processes the first micro-batch, the first device would start processing the second micro-batch.</li>
+</ul>
+
+<p>There are several advantages and disadvantages for both options. Tensor parallelism enables very big layers to be run and doesn’t need micro-batching, but it needs a lot of communication between devices, requiring high-bandwidth/low-latency interconnects (e.g. NVLink). On the other hand, pipeline parallelism needs minimal communication between devices, but requires micro-batching and balanced stages to avoid idleness.</p>
+
+<p>All types of parallelism discussed thus far are depicted in the following figure:</p>
+
+<figure>
+  <picture>
+    <!-- Auto scaling with imagemagick -->
+    <!--
+      See https://www.debugbear.com/blog/responsive-images#w-descriptors-and-the-sizes-attribute and
+      https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
+    -->
+    
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2025-11-19-llm-efficiency/parallelism.drawio.svg" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2025-11-19-llm-efficiency/parallelism.drawio.svg" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+  </picture>
+
+  
+</figure>
+
+<p>One final note is that all of these types of parallelism can be combined. For example, we could have two copies of the model, each one using three devices via pipeline parallelism, requiring six GPUs in total.</p>
+
+<p>Regarding the implementation, for inference I recommend the <code class="language-plaintext highlighter-rouge">vLLM</code> library, which allows the use of all types of parallelism via simple command line arguments. Training is a bit more complex. The <code class="language-plaintext highlighter-rouge">transformers</code> library offers data parallelism, as well as the <code class="language-plaintext highlighter-rouge">device_map="auto"</code> option when loading the model, which implements some rudimentary pipeline parallelism without segmentation (thus underutilizing GPUs greatly). For a more optimized or complete optimization, we would have to use something like the <code class="language-plaintext highlighter-rouge">deepspeed</code> library.</p>
+
+<h4 id="lower-precision-mixed-precision-and-quantization">Lower precision, mixed precision and quantization</h4>
+<p>Most operations can be run in 16-bit precision (FP16 or BF16) without problems, allowing us to reduce memory usage by a factor of 2, and speeding up computations a lot with modern hardware that is adapted to use this precision.</p>
+
+<p>Some operations like reductions/accumulations or normalizations are better performed in FP32 to avoid overflow/underflow or to reduce rounding errors. Thus, it is common to keep these operations in 32-bit precision (<strong>mixed precision</strong>). During training, it is also common to keep master weights of the model or optimizer states in FP32 as well.</p>
+
+<p>A step further is <strong>quantization</strong>, representing model parameters and sometimes activations with integers (e.g., int8, int4) instead of floating point (FP32/BF16/FP16). The goal is to reduce memory footprint and improve inference speed, especially on hardware that has fast integer arithmetic. The trick here is performing this compression of the model without losing too much accuracy. Very often, we find versions of the top open-source models already quantized with modern techniques like AWQ, so we do not need to worry about it.</p>
+
+<h4 id="cpu-offloading">CPU offloading</h4>
+<p>If you are very short on memory but absolutely need to run a large model, you can offload some of the weights to CPU, and swap them around with the GPU to complete all computations. However, I highly recommend against it because it is extremely slow.</p>
+
+<h2 id="training-specific">Training-specific</h2>
+<h4 id="parameter-efficient-fine-tuning-lora-and-soft-prompting">Parameter efficient fine-tuning: LoRA and soft prompting</h4>
+<p>In language modeling, we typically start from a pre-trained model that is then fine-tuned in our downstream task of interest. In most cases, it is sufficient to perform a “reduced” update to the network instead of updating all parameters, greatly reducing memory requirements for the gradients and optimizer states. What is more, given the small amount of labeled data we often have and the high dimensionality of textual data, these reduced updates are more likely to generalize better.</p>
+
+<p>The most common example is <strong>LoRA (Low-Rank Adaptation)</strong>, where a matrix $W \in \mathbb R^{n_{in} \times n_{out}}$ is updated with a low rank matrix $W_{new} = W + AB$ with trainable matrices $A \in \mathbb R^{n_{in} \times r}$ and  $B \in \mathbb R ^{r \times n_{out}}$ and a small rank $r$. Another example is the concept of <strong>soft prompting</strong>, where a few trainable embeddings are prepended to all input sequences.</p>
+
+<h4 id="qlora-quantized-low-rank-adaptation">QLoRA (Quantized Low-Rank Adaptation)</h4>
+<p>The next step in LoRA is to quantize the base model while training non-quantized low rank adapters, achieving very good compression without sacrificing a lot of performance.</p>
+
+<h4 id="optimizers-with-smaller-states">Optimizers with smaller states</h4>
+<p>The Adam optimizer uses $2N$ values for the momentum and second moment running estimates, where $N$ is the number of trainable parameters in the model. We can reduce it to $N$ by switching to Nesterov or RMSProp, or reduce it event further to $\approx\sqrt{N}$ with Adafactor. The tradeoff in all cases is reducing training stability and convergence speed.</p>
+
+<h4 id="accumulate-gradient-batches">Accumulate gradient batches</h4>
+<p>Instead of using a large batch size, we can instead use a small batch size and accumulate the gradient for multiple batches before performing an optimization step. This is equivalent thanks to the linearity of the gradient operator, except in models that include batch level operations (e.g. batch normalization), which is rare in language models. With this, we trade-off training speed to reduce memory usage, which is often the stricter limiting factor.</p>
+
+<h4 id="gradient-checkpointing">Gradient checkpointing</h4>
+<p>During the forward pass, it is common to store values that will be used in the backward to avoid wasteful recomputation. However, this is undesirable when the bottleneck is the GPU memory available. Disabling this is called <strong>gradient checkpointing</strong>.</p>
+
+<h4 id="gradientoptimizer-state-sharding">Gradient/optimizer state sharding</h4>
+<p>While training in a data parallel setting, each GPU contains a copy of the gradients and optimizer states for all parameters. However, this is a bit wasteful, and we can shard (divide) these vectors across GPUs at the expense of some communication overhead.</p>
+
+<h2 id="inference-specific">Inference-specific</h2>
+<h4 id="kv-cache">KV Cache</h4>
+<p>Autoregressive models use a causal attention mask that blocks each token from attending to future tokens. As a result, when generating text one token at a time, newly produced tokens don’t influence the earlier ones, only the other way around. This means we don’t need to redo computations for previous tokens. However, the new token still depends on earlier tokens through their attention keys and values. To avoid recomputing these for every step, we store the keys and values of all previously generated tokens in a <strong>KV cache</strong>. During each new forward pass, the model retrieves these cached representations and only performs computations for the new token, greatly speeding up generation. Regarding the implementation, this is already done in the typical generation libraries (e.g. <code class="language-plaintext highlighter-rouge">HuggingFace</code> or <code class="language-plaintext highlighter-rouge">vLLM</code>).</p>
+
+<h4 id="paged-attention">Paged attention</h4>
+<p><strong>Paged attention</strong> implements a type of paged virtual memory for the KV cache in the GPU RAM, removing the need for large contiguous blocks for long sequences and improving memory utilization. This is implemented in <code class="language-plaintext highlighter-rouge">vLLM</code>.</p>
+
+<h4 id="speculative-decoding-and-draft-models">Speculative decoding and draft models</h4>
+<p>Speculative decoding pairs a large language model with a smaller, faster “draft model”. The draft model predicts several upcoming tokens, and the large model then checks those predictions in parallel, accepting the ones that match what it would have produced itself and discarding the rest. This allows the system to generate multiple tokens per verification step instead of one at a time, significantly reducing latency while preserving the large model’s output quality.</p>
+
+<h4 id="efficient-batching-and-scheduling">Efficient batching and scheduling</h4>
+<p><code class="language-plaintext highlighter-rouge">vLLM</code> implements and efficient scheduling algorithm where new requests made to the model are dynamically added to the current batch, and completed generations are dynamically removed from the batch as well, improving resource utilization.</p>
+
+<h4 id="lora-for-multi-model-serving">LoRA for multi-model serving</h4>
+<p>When serving the same base model with several LoRA adapters on top, you can share the common base in GPU memory and enable or disable the pertinent adapters at runtime, making it very efficient to deploy. This is also implemented in <code class="language-plaintext highlighter-rouge">vLLM</code>.</p>]]></content><author><name></name></author><summary type="html"><![CDATA[A small index of all ideas I have come to learn to run LLM efficiently, and with low resources.]]></summary></entry><entry><title type="html">Multivariate Hawkes process with Jax</title><link href="https://pablomirallesg.com/blog/hawkes-multivariate" rel="alternate" type="text/html" title="Multivariate Hawkes process with Jax" /><published>2025-11-09T00:00:00+01:00</published><updated>2025-11-09T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/hawkes-multivariate</id><content type="html" xml:base="https://pablomirallesg.com/blog/hawkes-multivariate"><![CDATA[<p>Recently, a colleague was giving a seminar on his ongoing work, and he was looking for an efficient implementation to train a multivariate Hawkes process. I though that it was a cool project to tackle with deep learning frameworks!</p>
 <h2 id="definition">Definition</h2>
 <p>A <strong>multivariate Hawkes process</strong> is a <em>self-exciting point process</em> that models how multiple types of events influence each other over time. Formally, we have $K$ event types, with baseline rates $\mu_i$, excitation matrix $\alpha_{ij}$, and exponential decay rate $\beta_{ij}$ (often shared as a single $\beta$). Each event type has a <strong>conditional intensity</strong> function:</p>
 
@@ -103,7 +340,7 @@ The intuition is that each past event of type $j$ adds an <strong>exponential bu
 </code></pre></div></div>
 
 <h2 id="complete-code">Complete code</h2>
-<p>The full code with a training example is provided at <a href="https://github.com/pablomiralles22/multiprocess-hawkes-jax">pablomiralles22/multiprocess-hawkes-jax</a>.</p>]]></content><author><name></name></author><summary type="html"><![CDATA[Implementing the training of a multivariate Hawkes process efficiently with Jax]]></summary></entry><entry><title type="html">An introduction to contrastive techniques for representation learning</title><link href="https://pablomirallesg.com/blog/contrastive-learning" rel="alternate" type="text/html" title="An introduction to contrastive techniques for representation learning" /><published>2024-07-16T00:00:00+02:00</published><updated>2024-07-16T00:00:00+02:00</updated><id>https://pablomirallesg.com/blog/contrastive-learning</id><content type="html" xml:base="https://pablomirallesg.com/blog/contrastive-learning"><![CDATA[<p>Earlier this year I had to write a technical report on the topic of contrastive
+<p>The full code with a training example is provided at <a href="https://github.com/pablomiralles22/multiprocess-hawkes-jax">pablomiralles22/multiprocess-hawkes-jax</a>.</p>]]></content><author><name></name></author><summary type="html"><![CDATA[Implementing the training of a multivariate Hawkes process efficiently with Jax.]]></summary></entry><entry><title type="html">An introduction to contrastive techniques for representation learning</title><link href="https://pablomirallesg.com/blog/contrastive-learning" rel="alternate" type="text/html" title="An introduction to contrastive techniques for representation learning" /><published>2024-07-16T00:00:00+02:00</published><updated>2024-07-16T00:00:00+02:00</updated><id>https://pablomirallesg.com/blog/contrastive-learning</id><content type="html" xml:base="https://pablomirallesg.com/blog/contrastive-learning"><![CDATA[<p>Earlier this year I had to write a technical report on the topic of contrastive
 learning
 (<a href="/assets/pdf/projects/contrastive-learning-report/report.pdf">link</a>).
 This post is an effort to create something more digestible and adequate for
@@ -126,7 +363,9 @@ functions, data generation techniques, negative examples and applications.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-    <img src="/assets/img/posts/2024_contrastive-learning/nn_repr.pdf" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/nn_repr-480.webp 480w,/assets/img/posts/2024-07-16-contrastive-learning/nn_repr-800.webp 800w,/assets/img/posts/2024-07-16-contrastive-learning/nn_repr-1400.webp 1400w," type="image/webp" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/nn_repr.pdf" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
   
@@ -172,7 +411,9 @@ following diagram shows this process.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-    <img src="/assets/img/posts/2024_contrastive-learning/transfer-learning.drawio.pdf" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.drawio.svg" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.drawio.svg" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
   
@@ -347,7 +588,9 @@ subscript.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-    <img src="/assets/img/posts/2024_contrastive-learning/contrastive-learning.drawio.pdf" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/contrastive-learning.drawio.svg" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/contrastive-learning.drawio.svg" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
   
@@ -397,7 +640,9 @@ $\varepsilon$. The function is plotted in the following figure.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-    <img src="/assets/img/posts/2024_contrastive-learning/pair_loss_pos.pdf" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos-480.webp 480w,/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos-800.webp 800w,/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos-1400.webp 1400w," type="image/webp" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos.pdf" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
   
@@ -417,7 +662,9 @@ $\varepsilon$. The function is plotted in the following figure.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-    <img src="/assets/img/posts/2024_contrastive-learning/pair_loss_neg.pdf" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg-480.webp 480w,/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg-800.webp 800w,/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg-1400.webp 1400w," type="image/webp" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg.pdf" width="100%" height="auto" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
   
