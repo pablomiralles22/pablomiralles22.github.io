@@ -138,6 +138,8 @@ for m in range(0, M, BLOCK_SIZE_M):
     C = max_global + log(reduce_global)
 ```
 
+In standard matrix multiplication, you can parallelize over the tile grid in the M and N dimensions because each tile of the output depends only on a reduction over K. The K-dimension cannot be parallelized directly because every partial product must be accumulated in a synchronized way. In this fused matmul-logsumexp kernel, the situation is different: each M×N tile contributes to a reduction over the N-dimension, so N also becomes a reduction axis. Because of this dependency, only the M-tiles are fully independent. Each M-tile can maintain its own running max_global and reduce_global values while streaming through all N-blocks and all K-blocks. Triton handles this by launching one program instance per M-tile. Each instance processes all N- and K-blocks needed for its tile, performing the numerically stable online update of the log-sum-exp.
+
 The full code is available at [pablomiralles22/fused-matmul-logsumexp](https://github.com/pablomiralles22/fused-matmul-logsumexp), and you will find a good description and instructions on how to use it on the `README` file.
 
 ### Benchmarking
