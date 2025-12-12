@@ -109,7 +109,20 @@ C &= M + \mathrm{logsumexp} (A \cdot B^T - M,\ \mathrm{dim} = 1).
 \end{align}
 $$
 
-This slightly complicates computation across $N$-tiles: we must track the online maximum and the sum of exponentials with the maximum subtracted. The algorithm:
+This slightly complicates computation across $N$-tiles: we must track the online maximum and the sum of exponentials with the maximum subtracted. This can be seen as a reduction with the following operator:
+
+$$
+\begin{array}{rcl} \oplus: & (\mathbb{R} \times \mathbb R) \times (\mathbb{R} \times \mathbb R) & \longrightarrow \mathbb{R} \times \mathbb R \\[3pt] & (m_1, s_1),(m_2,s_2) & \longmapsto \left( \max(m_1, m_2) , s_1 \cdot e^{x_1 - \max(x_1, x_2)} + s_2 \cdot e^{x_2 - \max(x_1, x_2)} \right), \end{array}
+$$
+
+The initial sequence would be transformed as well:
+
+$$
+x_1, x_2, \dots, x_n \rightsquigarrow (x_1, e^0), (x_2, e^0), \dots, (x_n, e^0).
+$$
+
+
+The algorithm is modified as follows:
 
 ```python
 for m in range(0, M, BLOCK_SIZE_M):
