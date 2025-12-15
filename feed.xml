@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2025-12-12T16:21:47+01:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><entry><title type="html">Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead</title><link href="https://pablomirallesg.com/blog/fused-matmul-logsumexp" rel="alternate" type="text/html" title="Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead" /><published>2025-12-11T00:00:00+01:00</published><updated>2025-12-11T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/fused-matmul-logsumexp</id><content type="html" xml:base="https://pablomirallesg.com/blog/fused-matmul-logsumexp"><![CDATA[<h3 id="motivation">Motivation</h3>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2025-12-15T17:24:38+01:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><entry><title type="html">Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead</title><link href="https://pablomirallesg.com/blog/fused-matmul-logsumexp" rel="alternate" type="text/html" title="Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead" /><published>2025-12-11T00:00:00+01:00</published><updated>2025-12-11T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/fused-matmul-logsumexp</id><content type="html" xml:base="https://pablomirallesg.com/blog/fused-matmul-logsumexp"><![CDATA[<h3 id="motivation">Motivation</h3>
 <p>In my research I have worked with methods that involve retrieving the log-probabilities of an input text from a large language model. Let me first introduce what I mean exactly and why this is useful.</p>
 
-<p>Consider an input text tokenized as a sequence $t_1,\dots,t_L$. Each token is mapped to an initial embedding, forming the initial hidden-state matrix $\mathrm{HS}^0 \in \mathbb{R}^{L \times D}$. The transformer then processes these representations and produces the contextualized final hidden states</p>
+<p>Consider an input text tokenized into the sequence $t_1,\dots,t_L$. Each token is mapped to an initial embedding, forming the initial hidden-state matrix $\mathrm{HS}^0 \in \mathbb{R}^{L \times D}$. The transformer then processes these representations and produces the contextualized final hidden states</p>
 
 \[f(\mathrm{HS}^0;\theta) = \mathrm{HS}^{\text{final}} \in \mathbb{R}^{L \times D}.\]
 
-<p>A final linear layer with weights $W \in \mathbb{R}^{V \times D}$ and bias $b \in \mathbb{R}^{V}$ is applied to obtain the logits</p>
+<p>A final linear layer with weight matrix $W \in \mathbb{R}^{V \times D}$ and bias vector $b \in \mathbb{R}^{V}$ is applied to obtain the logits</p>
 
 \[\mathrm{logits} = \mathrm{HS}^{\text{final}}\cdot W^T + b \in \mathbb{R}^{L \times V}.\]
 
@@ -18,7 +18,7 @@
 <p>During the generation process we only compute the final probability vector to sample the new token to be appended. However, we can apply the model to a full input text and study these probabilities across tokens. This is useful in distinguishing AI-generated text (we expect these texts to score higher when passed through the LLM), and we have also leveraged them for human authorship problems.</p>
 
 <h3 id="computational-problems">Computational problems</h3>
-<p>The vocabulary of modern LLMs is very large (100K–300K tokens), and the matrix $P \in \mathbb{R}^{L \times V}$ becomes extremely large for long texts, especially in batched settings. Often we only need the log-probability of the token that actually occurred next in the sequence; i.e., we want the sequence</p>
+<p>The vocabulary of modern LLMs is very large (100K–300K tokens), and the matrix $P \in \mathbb{R}^{L \times V}$ becomes extremely large for long texts, especially if we batch inputs for higher throughputs. However, in our use cases, we only need the log-probability of the token that actually occurred next in the sequence; i.e., we want the sequence</p>
 
 \[\log P_{1, t_2},\ \log P_{2, t_3},\ \dots,\ \log P_{L-1, t_L}.\]
 
@@ -37,15 +37,15 @@
 \[\log P_{i, t_{i+1}}
 = \mathrm{logits}_{i, t_{i+1}} - \mathrm{logsumexp}(\mathrm{logits}_i),\]
 
-<p>The first component is actually very easy to simplify:</p>
+<p>The first component is very easy to simplify:</p>
 
 \[\mathrm{logits}_{i, t_{i+1}} =
 \mathrm{HS}^{\text{final}}_i \cdot W_{t_{i+1}} + b_{t_{i+1}}.\]
 
-<p>The second term is a reduction across the vocabulary dimension. In other words, $\mathrm{logsumexp}(\mathrm{logits},\ \mathrm{dim}=1)$ yields a length-$L$ vector, not a massive matrix. Naively, you’d instantiate the full logits to compute <code class="language-plaintext highlighter-rouge">logsumexp</code>, which is expensive. Instead, we can fuse the linear layer that produces logits with the <code class="language-plaintext highlighter-rouge">logsumexp</code> reduction in a single kernel.</p>
+<p>The second term is a reduction across the vocabulary dimension. In other words, $\mathrm{logsumexp}(\mathrm{logits},\ \mathrm{dim}=1)$ yields a vector of length $L$, not a massive matrix. Naively, you would instantiate the full logits to compute the <code class="language-plaintext highlighter-rouge">logsumexp</code>, which is expensive. Instead, we can fuse the linear layer that produces logits with the <code class="language-plaintext highlighter-rouge">logsumexp</code> reduction in a single kernel.</p>
 
 <h3 id="tiled-matmul--online-log-sum-exp">Tiled matmul &amp; online log-sum-exp</h3>
-<p>Consider an input matrix $A\in \mathbb R^{M \times K}$, a weight matrix $B\in \mathbb R^{N \times K}$ (we ignore the bias vector for simplicity here). We want to implement the following:</p>
+<p>Let me first ignore the bias vector of the linear layer for simplicity now. Consider two matrices $A\in \mathbb R^{M \times K}$ and $B\in \mathbb R^{N \times K}$. We want to implement the following:</p>
 
 \[C = \mathrm{logsumexp} (A \cdot B^T, \mathrm{dim} = 1),\]
 
@@ -53,7 +53,7 @@
 
 \[C_i = \log \sum_{j=1}^N \exp(A_i \cdot B_j^T); \qquad i=1,\dots M.\]
 
-<p>As with general matrix multiplication, we tile the matrices; each tile pair is handled by a tensor core. While computing tile products, we apply the exponential and maintain the running sum of exponentials across the $N$ dimension. After accumulation along $N$, we take the logarithm.</p>
+<p>As with general matrix multiplication, we tile the matrices; each pair of tiles is handled by a tensor core. While computing tile products, we apply the exponential and maintain the running sum of exponentials across the $N$ dimension. After accumulation along $N$, we take the logarithm.</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">BLOCK_SIZE_M</span><span class="p">):</span>
     <span class="n">reduce_global</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">BLOCK_SIZE_M</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
@@ -70,22 +70,26 @@
     <span class="n">C</span> <span class="o">=</span> <span class="n">log</span><span class="p">(</span><span class="n">reduce_global</span><span class="p">)</span>
 </code></pre></div></div>
 
-<p>After dividing the algorithm in blocks, we can parallelize the program across tensor cores by blocks. Since we have a reduction dependency in both the $N$ and $K$ dimensions, we will parallelize across blocks in the $M$ dimension. However, there is an additional implementation detail that is typically implemented for numerical stability, which is mathematically equivalent but avoids computing the exponential of large numbers:</p>
+<p>After dividing the algorithm in blocks, we can parallelize the program across tensor cores by blocks. Since we have a reduction dependency in both the $N$ and $K$ dimensions, we will parallelize across blocks in the $M$ dimension.</p>
+
+<p>In standard matrix multiplication, you can parallelize over the tile grid in the $M$ and $N$ dimensions because each tile of the output depends only on a reduction over $K$. The $K$-dimension cannot be parallelized directly because every partial product must be accumulated in a synchronized way. In this fused matmul-logsumexp kernel, the situation is different: each $M\times N$ tile contributes to a reduction over the $N$-dimension, so $N$ also becomes a reduction axis. Because of this dependency, only the $M-tiles are fully independent. Triton handles this by launching one program instance per M-tile. Each instance processes all $N$- and $K$-blocks needed for its tile.</p>
+
+<p>However, there is an additional implementation detail that is critical for numerical stability. This modification is mathematically equivalent but avoids computing the exponential of large numbers:</p>
 
 \[\begin{align}
 M &amp;= \max (A \cdot B^T,\ \mathrm{dim}=1) \\
 C &amp;= M + \mathrm{logsumexp} (A \cdot B^T - M,\ \mathrm{dim} = 1).
 \end{align}\]
 
-<p>This slightly complicates computation across $N$-tiles: we must track the online maximum and the sum of exponentials with the maximum subtracted. This can be seen as a reduction with the following operator:</p>
+<p>Note that we are substracting a matrix and a vector, referring to the traditional broadcasting mechanism in PyTorch. This modification complicates our tiled implementation: we must track the online maximum across $N$-tiles and the sum of translated exponentials. This can be seen as a reduction with the following operator:</p>
 
 \[\begin{array}{rcl} \oplus: &amp; (\mathbb{R} \times \mathbb R) \times (\mathbb{R} \times \mathbb R) &amp; \longrightarrow \mathbb{R} \times \mathbb R \\[3pt] &amp; (m_1, s_1),(m_2,s_2) &amp; \longmapsto \left( \max(m_1, m_2) , s_1 \cdot e^{x_1 - \max(x_1, x_2)} + s_2 \cdot e^{x_2 - \max(x_1, x_2)} \right), \end{array}\]
 
-<p>The initial sequence would be transformed as well:</p>
+<p>The initial sequence would be transformed by the map</p>
 
 \[x_1, x_2, \dots, x_n \rightsquigarrow (x_1, e^0), (x_2, e^0), \dots, (x_n, e^0).\]
 
-<p>The algorithm is modified as follows:</p>
+<p>We are now ready to present the full algorithm:</p>
 
 <div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">M</span><span class="p">,</span> <span class="n">BLOCK_SIZE_M</span><span class="p">):</span>
     <span class="n">reduce_global</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">((</span><span class="n">BLOCK_SIZE_M</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">float32</span><span class="p">)</span>
@@ -113,9 +117,7 @@ C &amp;= M + \mathrm{logsumexp} (A \cdot B^T - M,\ \mathrm{dim} = 1).
     <span class="n">C</span> <span class="o">=</span> <span class="n">max_global</span> <span class="o">+</span> <span class="n">log</span><span class="p">(</span><span class="n">reduce_global</span><span class="p">)</span>
 </code></pre></div></div>
 
-<p>In standard matrix multiplication, you can parallelize over the tile grid in the M and N dimensions because each tile of the output depends only on a reduction over K. The K-dimension cannot be parallelized directly because every partial product must be accumulated in a synchronized way. In this fused matmul-logsumexp kernel, the situation is different: each M×N tile contributes to a reduction over the N-dimension, so N also becomes a reduction axis. Because of this dependency, only the M-tiles are fully independent. Each M-tile can maintain its own running max_global and reduce_global values while streaming through all N-blocks and all K-blocks. Triton handles this by launching one program instance per M-tile. Each instance processes all N- and K-blocks needed for its tile, performing the numerically stable online update of the log-sum-exp.</p>
-
-<p>The full code is available at <a href="https://github.com/pablomiralles22/fused-matmul-logsumexp">pablomiralles22/fused-matmul-logsumexp</a>, and you will find a good description and instructions on how to use it on the <code class="language-plaintext highlighter-rouge">README</code> file.</p>
+<p>The full Triton code is available at <a href="https://github.com/pablomiralles22/fused-matmul-logsumexp">pablomiralles22/fused-matmul-logsumexp</a>, and you will find a good description and instructions on how to use it on the <code class="language-plaintext highlighter-rouge">README</code> file.</p>
 
 <h3 id="benchmarking">Benchmarking</h3>
 <p>Consider an input matrix $X\in \mathbb R^{M \times K}$, a weight matrix $W\in \mathbb R^{N \times K}$, and a bias vector $b\in \mathbb R^{N}$. The following plots show execution time and peak memory for varying $M$ and $N$, comparing the fused implementation to a naive baseline:</p>
