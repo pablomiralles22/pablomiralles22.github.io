@@ -2,15 +2,19 @@
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
 <loc>https://pablomirallesg.com/tagged/contrastive-learning/</loc>
-<lastmod>2025-12-15T17:27:24+01:00</lastmod>
+<lastmod>2025-12-29T12:11:06+01:00</lastmod>
 </url>
 <url>
 <loc>https://pablomirallesg.com/tagged/deep-learning/</loc>
-<lastmod>2025-12-15T17:27:24+01:00</lastmod>
+<lastmod>2025-12-29T12:11:06+01:00</lastmod>
 </url>
 <url>
 <loc>https://pablomirallesg.com/tagged/studying/</loc>
-<lastmod>2025-12-15T17:27:24+01:00</lastmod>
+<lastmod>2025-12-29T12:11:06+01:00</lastmod>
+</url>
+<url>
+<loc>https://pablomirallesg.com/notes/pope-gopalakrishnan/</loc>
+<lastmod>2025-12-29T00:00:00+01:00</lastmod>
 </url>
 <url>
 <loc>https://pablomirallesg.com/blog/how-to-do-well-in-math-and-cs</loc>
@@ -37,6 +41,9 @@
 </url>
 <url>
 <loc>https://pablomirallesg.com/</loc>
+</url>
+<url>
+<loc>https://pablomirallesg.com/notes</loc>
 </url>
 <url>
 <loc>https://pablomirallesg.com/assets/cv.pdf</loc>
