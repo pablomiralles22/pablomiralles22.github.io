@@ -100,10 +100,20 @@ compress_html:
 #   style:    compressed
 
 collections:
+  notes:
+    output: true
+    permalink: /notes/:slug/
+    sort_by: date
+
   my_tags:
     output: true
     permalink: /tagged/:slug/
+
 defaults:
+  - scope:
+      path: "pages"
+    values:
+      permalink: /:basename/
   - scope:
       path: ""
       type: my_tags
@@ -125,6 +135,9 @@ exclude: [vendor]
 links:
   - name: Blog
     url: /blog
+    new_tab: false
+  - name: Notes
+    url: /notes
     new_tab: false
   - name: Resume
     url: /assets/cv.pdf
