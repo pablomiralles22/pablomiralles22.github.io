@@ -3,11 +3,11 @@
   {% assign path_parts = page.url | remove_first: "/" | split: "/" %}
   {% assign parent_dir = path_parts[0] %}
 
-  <a href="{{ site.baseurl }}/{{ parent_dir }}">← Back to all {{ parent_dir }}</a>
+  <a href="{{ site.baseurl }}/{{ parent_dir }}">← Back to {{ parent_dir }}</a>
   <!-- <a href="{{ site.baseurl }}/blog">← Back to all writings</a> -->
   <div class="bottom-footer">
     <br>
-    © Copyright 2025 Pablo Miralles. All rights reserved. |
+    © Copyright Pablo Miralles. All rights reserved. |
     <i>Theme is <a href="https://knhash.in/jekyllBear" title="the art">jekyllBear</a> by <a href="https://knhash.in" title="the artist">knhash</a></i>
   </div>
 </footer>

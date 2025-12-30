@@ -10,6 +10,11 @@ layout: compress
 
     {{ content }}
 
+    <!-- <form class="site-search" method="get" action="http://www.google.com/search" target="_blank" aria-label="Site search">
+    <input type="hidden" name="sitesearch" value="pablomirallesg.com" />
+    <input type="text" name="q" maxlength="255" placeholder="Search with Google" />
+    </form> -->
+
     <ul class="blog-posts">
         {% for post in site.notes %}
         <li>
@@ -24,6 +29,7 @@ layout: compress
         </li>
         {% endfor %}
     </ul>
+
 
 </main>
 

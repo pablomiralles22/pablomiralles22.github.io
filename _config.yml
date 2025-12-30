@@ -26,8 +26,19 @@ baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://pablomirallesg.com" # the base hostname & protocol for your site, e.g. http://example.com
 
 # Social settings
-x_username: p_miralles_
-github_username:  pablomiralles22
+social:
+  - name: Email
+    text: pablo.miralles [at] upm.es
+    url: null
+  - name: GitHub
+    text: pablomiralles22
+    url: https://github.com/pablomiralles22
+  - name: LinkedIn
+    text: in/pablo-miralles-gonzalez
+    url: https://www.linkedin.com/in/pablo-miralles-gonzalez/
+  # twitter:
+  #   text: p_miralles_
+  #   url: https://x.com/p_miralles_
 
 # Build settings
 theme: jekyll-bear-theme
