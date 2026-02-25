@@ -8,13 +8,6 @@ I’m a PhD student in Artificial Intelligence supervised by [Alejandro Martín]
 
 My research focuses on applying deep learning to natural language processing (NLP), with work spanning AI-generated text detection, authorship attribution, natural language inference (NLI), and efficient Transformer architectures. The overarching theme is the study of inductive biases in models, the capabilities adquired from pre-training, and how to apply or post-train these models for downstream tasks in a way that *generalizes robustly* especially when data are scarce or affected by spurious correlations.
 
----
-
-**Note**: I am currently seeking a 3-month research visit (September–December 2026) at a leading university or research lab working in NLP and deep learning problems. Ideally there is a match between my and the lab's recent work,
-but anything related to my broader interests is great. Funding is already secured. If you believe there may be a good fit, please feel free to get in touch by email (see below)!
-
----
-
 Feel free to check out my publications, occasional posts, or reach out if you’re interested in collaborating!
 
 <ul class="social-list">
