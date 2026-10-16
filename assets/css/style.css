@@ -190,6 +190,25 @@ img {
     max-width: 100%;
 }
 
+.profile-pic {
+    float: left;
+    width: 130px;
+    height: 130px;
+    margin: 0 var(--spacing-md) var(--spacing-sm) 0;
+    padding: 4px;
+    border: 3px dotted var(--main-color);
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+@media (max-width: 500px) {
+    .profile-pic {
+        float: none;
+        display: block;
+        margin: 0 auto var(--spacing-md);
+    }
+}
+
 blockquote {
     border-left: 1px solid var(--blockquote-color);
     color: var(--code-color);
