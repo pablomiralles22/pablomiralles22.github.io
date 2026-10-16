@@ -1,4 +1,8 @@
 #!/bin/bash
+set -e
+
+# Fresh production build (jekyll serve leaves localhost URLs in _site)
+JEKYLL_ENV=production bundle exec jekyll build
 
 git worktree add --force _deploy gh-pages
 find _deploy -mindepth 1 -not -name '.git' -exec rm -rf {} +
