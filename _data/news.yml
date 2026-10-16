@@ -1,0 +1,10 @@
+# One entry per news item. Order doesn't matter; sorted by date when rendered.
+# `text` supports inline Markdown (e.g. links).
+- date: 2026-10-01
+  text: 🧠 Our paper [On the locality bias and results in the Long Range Arena](https://arxiv.org/abs/2501.14850) got accepted at IEEE Transactions on Emerging Topics in Computational Intelligence (TETCI)! 🎉
+- date: 2026-09-19
+  text: 🇬🇧 Started my research visit at Queen Mary University of London (QMUL), working with Arkaitz Zubiaga! 🎓
+- date: 2026-09-01
+  text: 📄 Our paper [Evaluating the scalability and adversarial generalization of GRPO-trained NLI models](https://doi.org/10.1016/j.knosys.2026.117013) got accepted at Knowledge-Based Systems! 🥳
+- date: 2026-08-20
+  text: 🎉 Our paper [One-shot Style Transfer LLM log-probabilities for Authorship Attribution and Verification](https://arxiv.org/abs/2510.13302) got accepted at Findings of EMNLP 2026! 🚀

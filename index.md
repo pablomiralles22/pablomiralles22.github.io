@@ -23,3 +23,10 @@ Feel free to check out my publications, occasional posts, or reach out if you’
 		</li>
 	{% endfor %}
 </ul>
+
+## News
+
+{% include news-list.html limit=5 %}
+{% if site.data.news.size > 5 %}
+<a href="{{ '/news' | relative_url }}">All news →</a>
+{% endif %}

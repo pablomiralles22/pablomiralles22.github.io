@@ -1,0 +1,15 @@
+{% assign news = site.data.news | sort: "date" | reverse %}
+<ul class="blog-posts">
+    {% for item in news limit: include.limit %}
+    <li>
+        <span>
+            <i>
+                <time datetime="{{ item.date | date: '%Y-%m-%d' }}">
+                    {{ item.date | date: "%b %Y" }}
+                </time>
+            </i>
+        </span>
+        <div>{{ item.text | markdownify | remove: '<p>' | remove: '</p>' }}</div>
+    </li>
+    {% endfor %}
+</ul>
