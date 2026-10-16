@@ -3,6 +3,7 @@ layout: default
 title: Hello
 ---
 
+<img class="profile-pic" src="{{ '/assets/img/profile-circle.jpg' | relative_url }}" alt="Photo of Pablo Miralles" width="130" height="130">
 **Hi, I'm Pablo!**
 I’m a PhD student in Artificial Intelligence supervised by [Alejandro Martín](https://scholar.google.es/citations?user=b3J9VRsAAAAJ&hl=en) and [Javier Huertas-Tato](https://scholar.google.es/citations?user=5XOhXooAAAAJ&hl=es).  Before this, I completed an MSc in Machine Learning and Big Data at the Technical University of Madrid, and a double BSc in Mathematics and Computer Science at the University of Murcia.
 
