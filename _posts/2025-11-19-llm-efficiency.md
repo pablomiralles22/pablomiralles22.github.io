@@ -20,10 +20,14 @@ efficiently in GPUs. As you probably know, this formula is quadratic in the inpu
 #### Mixture-of-experts (MoE)
 A mixture-of-experts (MoE) model splits a neural network into many specialized _experts_, and uses a **gating network** to decide which experts handle each input. In the case of LLMs, this is typically applied in the feed-forward layers. Instead of scaling the MLP layers by widening them, the network uses several MLP experts and routes each token to a few of them (usually 1-2). This scales the number of effective parameters without increasing inference costs too much.
 
+{% include figure.liquid path="assets/img/posts/2025-11-19-llm-efficiency/moe.svg" caption="A dense feed-forward layer compared with a mixture-of-experts layer. The router sends each token to its top-2 experts and the outputs are combined with a weighted sum; with each expert half the size of the dense block, MoE doubles the weights at the same compute per token." %}
+
 As a side note, during training we must make sure that the tokens are spread across experts to avoid collapsing to a subset of experts. This can be done via an auxiliary load-balancing loss term, adding noise to the gating network that routes token, or other ideas.
 
 #### Data/model parallelism
 The concept of parallelism is key both to speed up execution and to be able to run large models that do not fit in a single GPU.
+
+{% include figure.liquid path="assets/img/posts/2025-11-19-llm-efficiency/parallelism.svg" class="img-fluid rounded" caption="How data, pipeline and tensor parallelism splits the model across 3 GPUs. Columns are layers and colours show which GPU holds each block; orange marks show when the GPUs communicate." %}
 
 The simplest type is **data parallelism**, where we store a full copy of the model in each GPU, and the data is sharded across GPUs and processed independently. For training it is then necessary to sync the gradients in all devices before performing the backward pass. This option is great to speed up execution, but it requires being able to fit the model in each device.
 
@@ -31,10 +35,11 @@ In **model parallelism**, each device holds only _part_ of the model, and the ex
 - **Tensor parallelism**. Each layer of the model is split across the devices. For example, the columns or rows in the weight matrix of a linear layer could be divided by GPU, and the result synced and concatenated between devices.
 - **Pipeline parallelism**. The layers are grouped in stages and divided into the devices. For example, the first device could execute layers 1 to 4, and the second device layers 5 to 8. Of course, there is a dependency between the devices, both in the forward and in the backward pass. To avoid idle time, the batch is divided in micro-batches and the execution segmented across them. For example, the first device could execute the first micro-batch, and pass the result to the second device. While the second device processes the first micro-batch, the first device would start processing the second micro-batch.
 
+  The following figure compares the execution schedule of pipeline parallelism with and without micro-batching:
+  {% include figure.liquid path="assets/img/posts/2025-11-19-llm-efficiency/pipeline-schedule.svg" class="img-fluid rounded" caption="Pipeline parallelism on 3 GPUs (F = forward, B = backward). Splitting the batch into 4 micro-batches lets the GPUs work at the same time, halving the total time." %}
+
 There are several advantages and disadvantages for both options. Tensor parallelism enables very big layers to be run and doesn't need micro-batching, but it needs a lot of communication between devices, requiring high-bandwidth/low-latency interconnects (e.g. NVLink). On the other hand, pipeline parallelism needs minimal communication between devices, but requires micro-batching and balanced stages to avoid idleness.
 
-All types of parallelism discussed thus far are depicted in the following figure:
-{% include figure.liquid path="assets/img/posts/2025-11-19-llm-efficiency/parallelism.drawio.svg" class="img-fluid rounded z-depth-1" %}
 
 One final note is that all of these types of parallelism can be combined. For example, we could have two copies of the model, each one using three devices via pipeline parallelism, requiring six GPUs in total.
 

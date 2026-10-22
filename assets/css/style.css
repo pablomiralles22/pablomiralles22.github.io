@@ -190,6 +190,13 @@ img {
     max-width: 100%;
 }
 
+figcaption {
+    margin-top: var(--spacing-xs);
+    font-size: 0.9em;
+    text-align: center;
+    opacity: 0.75;
+}
+
 .profile-pic {
     float: left;
     width: 130px;
