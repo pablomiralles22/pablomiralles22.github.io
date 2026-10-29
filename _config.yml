@@ -19,6 +19,8 @@
 # in the templates via {{ site.myvariable }}.
 
 title: Pablo Miralles
+tagline: PhD student in Artificial Intelligence
+author: Pablo Miralles
 email: pablo.miralles [at] upm.es
 description: >- # this means to ignore newlines until "baseurl:"
   Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid
@@ -49,6 +51,7 @@ plugins:
   - jekyll-figure
   - jekyll-imagemagick
   - jekyll-sitemap
+  - jekyll-seo-tag
 
 whitelist:
   - jekyll-redirect-from
@@ -121,6 +124,13 @@ collections:
     permalink: /tagged/:slug/
 
 defaults:
+  # Link preview defaults (jekyll-seo-tag); posts can override image and card
+  - scope:
+      path: ""
+    values:
+      image: /assets/img/profile-circle.jpg
+      twitter:
+        card: summary
   - scope:
       path: "pages"
     values:
@@ -142,6 +152,7 @@ exclude:
 - CLAUDE.md
 - vendor
 - scripts
+- "*.drawio"
 
 # Add general links to site pages here
 links:

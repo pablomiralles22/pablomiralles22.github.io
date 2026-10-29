@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Hello
+title: Pablo Miralles
 ---
 
 <img class="profile-pic" src="{{ '/assets/img/profile-circle.jpg' | relative_url }}" alt="Photo of Pablo Miralles" width="130" height="130">

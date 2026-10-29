@@ -1,6 +1,10 @@
 ---
 layout: post
-title: Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead
+title: Fused matmul + log-sum-exp in Triton for LLM log-probs
+heading: Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead
+image: /assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_N.png
+twitter:
+  card: summary_large_image
 description: Fusing matmul + log-sum-exp in Triton to read LLM token log-probabilities efficiently (less memory, faster)
 date: 2025-12-11
 
@@ -160,5 +164,5 @@ The full Triton code is available at [pablomiralles22/fused-matmul-logsumexp](ht
 ### Benchmarking
 Consider an input matrix $X\in \mathbb R^{M \times K}$, a weight matrix $W\in \mathbb R^{N \times K}$, and a bias vector $b\in \mathbb R^{N}$. The following plots show execution time and peak memory for varying $M$ and $N$, comparing the fused implementation to a naive baseline:
 
-{% include figure.liquid path="assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_N.png" class="img-fluid rounded z-depth-1" %}
-{% include figure.liquid path="assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_M.png" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_N.png" alt="Line charts of run time and peak memory against N, the rows of the weight matrix, where the fused kernel grows much more slowly than the naive version" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2025-12-11-fused-matmul-logsumexp/benchmark_vs_M.png" alt="Line charts of run time and peak memory against M, the rows of the input, where the fused kernel grows much more slowly than the naive version and its memory stays almost flat" class="img-fluid rounded z-depth-1" %}

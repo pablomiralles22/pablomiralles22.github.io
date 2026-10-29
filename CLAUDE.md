@@ -64,9 +64,17 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Figures in posts
 - Theme is `jekyll-bear-theme` (not al-folio). Dark mode follows `prefers-color-scheme`; backgrounds are `#F5F7F3` (light) and `#0D1B12` (dark). Site styles live in `assets/css/style.css`.
-- Insert figures with `{% include figure.liquid path="assets/img/posts/<post-slug>/<file>" caption="..." %}`. Add a `caption` to every new figure (styled via `figcaption` in `style.css`); avoid double quotes inside it.
+- Insert figures with `{% include figure.liquid path="assets/img/posts/<post-slug>/<file>" alt="..." caption="..." %}`. Add a `caption` (styled via `figcaption` in `style.css`) and an `alt` to every new figure; avoid double quotes inside both. The `alt` is one plain sentence saying what the image shows (for search engines and screen readers); the caption carries the explanation.
 - The `img-fluid rounded z-depth-1` classes are al-folio leftovers with no effect here; don't add them to new figures.
 - Diagrams are hand-written SVGs with a transparent background and mid-tone colours that read on both the light and dark backgrounds, so no theme switching is needed.
+
+## Links and SEO
+- `<head>` metadata (title, description, canonical, Open Graph/Twitter cards, JSON-LD) comes from `jekyll-seo-tag` via `{% seo %}` in `_includes/head.html`. Don't hand-write those tags.
+- Every post needs a `description` in its front matter (one sentence, ideally under ~160 characters); it becomes the search snippet and link-preview text.
+- Keep `title` under ~60 characters so search results don't truncate it. If the post deserves a longer on-page heading, put it in `heading` (rendered as the `<h1>` by `_layouts/post.html`).
+- Link previews default to the profile photo (`defaults` in `_config.yml`). For a post with a good raster figure, set `image: /assets/img/posts/<post-slug>/<file>.png` (leading slash, PNG/JPG, not SVG, which most preview cards can't show) plus `twitter: {card: summary_large_image}`.
+- Internal links in templates use `relative_url` (e.g. `{{ "/blog" | relative_url }}`), never `site.url`, so they work when serving locally. Use `absolute_url` only where a full URL is required (e.g. feeds).
+- Editable diagram sources (`*.drawio`) stay next to their exports but are excluded from the build in `_config.yml`.
 
 ## Diagram style
 Keep new diagrams consistent with `assets/img/posts/2025-11-19-llm-efficiency/*.svg` (the reference examples).
