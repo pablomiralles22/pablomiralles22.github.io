@@ -2,15 +2,15 @@
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
 <loc>https://pablomirallesg.com/tagged/contrastive-learning/</loc>
-<lastmod>2026-10-21T16:30:14+02:00</lastmod>
+<lastmod>2026-10-29T10:28:02+01:00</lastmod>
 </url>
 <url>
 <loc>https://pablomirallesg.com/tagged/deep-learning/</loc>
-<lastmod>2026-10-21T16:30:14+02:00</lastmod>
+<lastmod>2026-10-29T10:28:02+01:00</lastmod>
 </url>
 <url>
 <loc>https://pablomirallesg.com/tagged/studying/</loc>
-<lastmod>2026-10-21T16:30:14+02:00</lastmod>
+<lastmod>2026-10-29T10:28:02+01:00</lastmod>
 </url>
 <url>
 <loc>https://pablomirallesg.com/notes/pope-gopalakrishnan/</loc>
@@ -50,7 +50,7 @@
 </url>
 <url>
 <loc>https://pablomirallesg.com/assets/cv.pdf</loc>
-<lastmod>2026-10-21T16:28:55+02:00</lastmod>
+<lastmod>2026-10-27T10:59:15+01:00</lastmod>
 </url>
 <url>
 <loc>https://pablomirallesg.com/assets/img/posts/2024-07-16-contrastive-learning/bert.drawio.pdf</loc>
@@ -106,10 +106,6 @@
 </url>
 <url>
 <loc>https://pablomirallesg.com/assets/img/posts/2024-07-16-contrastive-learning/triplet_loss.pdf</loc>
-<lastmod>2026-10-15T11:52:45+02:00</lastmod>
-</url>
-<url>
-<loc>https://pablomirallesg.com/assets/img/posts/2025-11-19-llm-efficiency/parallelism.drawio.pdf</loc>
 <lastmod>2026-10-15T11:52:45+02:00</lastmod>
 </url>
 </urlset>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2026-10-21T16:30:14+02:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><entry><title type="html">Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead</title><link href="https://pablomirallesg.com/blog/fused-matmul-logsumexp" rel="alternate" type="text/html" title="Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead" /><published>2025-12-11T00:00:00+01:00</published><updated>2025-12-11T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/fused-matmul-logsumexp</id><content type="html" xml:base="https://pablomirallesg.com/blog/fused-matmul-logsumexp"><![CDATA[<h3 id="motivation">Motivation</h3>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2026-10-29T10:28:02+01:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><entry><title type="html">Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead</title><link href="https://pablomirallesg.com/blog/fused-matmul-logsumexp" rel="alternate" type="text/html" title="Coding a fused matrix multiplication and log-sum-exp reduction in Triton to retrieve LLM log-probabilities faster and with lower memory overhead" /><published>2025-12-11T00:00:00+01:00</published><updated>2025-12-11T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/fused-matmul-logsumexp</id><content type="html" xml:base="https://pablomirallesg.com/blog/fused-matmul-logsumexp"><![CDATA[<h3 id="motivation">Motivation</h3>
 <p>In my research I have worked with methods that involve retrieving the log-probabilities of an input text from a large language model. Let me first introduce what I mean exactly and why this is useful.</p>
 
 <p>Consider an input text tokenized into the sequence $t_1,\dots,t_L$. Each token is mapped to an initial embedding, forming the initial hidden-state matrix $\mathrm{HS}^0 \in \mathbb{R}^{L \times D}$. The transformer then processes these representations and produces the contextualized final hidden states</p>
@@ -165,22 +165,28 @@ C &amp;= M + \mathrm{logsumexp} (A \cdot B^T - M,\ \mathrm{dim} = 1).
 <h4 id="mixture-of-experts-moe">Mixture-of-experts (MoE)</h4>
 <p>A mixture-of-experts (MoE) model splits a neural network into many specialized <em>experts</em>, and uses a <strong>gating network</strong> to decide which experts handle each input. In the case of LLMs, this is typically applied in the feed-forward layers. Instead of scaling the MLP layers by widening them, the network uses several MLP experts and routes each token to a few of them (usually 1-2). This scales the number of effective parameters without increasing inference costs too much.</p>
 
+<figure>
+  <picture>
+    <!-- Auto scaling with imagemagick -->
+    <!--
+      See https://www.debugbear.com/blog/responsive-images#w-descriptors-and-the-sizes-attribute and
+      https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
+    -->
+    
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2025-11-19-llm-efficiency/moe.svg" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2025-11-19-llm-efficiency/moe.svg" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+  </picture>
+
+  
+    <figcaption class="caption">A dense feed-forward layer compared with a mixture-of-experts layer. The router sends each token to its top-2 experts and the outputs are combined with a weighted sum; with each expert half the size of the dense block, MoE doubles the weights at the same compute per token.</figcaption>
+  
+</figure>
+
 <p>As a side note, during training we must make sure that the tokens are spread across experts to avoid collapsing to a subset of experts. This can be done via an auxiliary load-balancing loss term, adding noise to the gating network that routes token, or other ideas.</p>
 
 <h4 id="datamodel-parallelism">Data/model parallelism</h4>
 <p>The concept of parallelism is key both to speed up execution and to be able to run large models that do not fit in a single GPU.</p>
-
-<p>The simplest type is <strong>data parallelism</strong>, where we store a full copy of the model in each GPU, and the data is sharded across GPUs and processed independently. For training it is then necessary to sync the gradients in all devices before performing the backward pass. This option is great to speed up execution, but it requires being able to fit the model in each device.</p>
-
-<p>In <strong>model parallelism</strong>, each device holds only <em>part</em> of the model, and the execution of the model is orchestrated across them. We can distinguish two types:</p>
-<ul>
-  <li><strong>Tensor parallelism</strong>. Each layer of the model is split across the devices. For example, the columns or rows in the weight matrix of a linear layer could be divided by GPU, and the result synced and concatenated between devices.</li>
-  <li><strong>Pipeline parallelism</strong>. The layers are grouped in stages and divided into the devices. For example, the first device could execute layers 1 to 4, and the second device layers 5 to 8. Of course, there is a dependency between the devices, both in the forward and in the backward pass. To avoid idle time, the batch is divided in micro-batches and the execution segmented across them. For example, the first device could execute the first micro-batch, and pass the result to the second device. While the second device processes the first micro-batch, the first device would start processing the second micro-batch.</li>
-</ul>
-
-<p>There are several advantages and disadvantages for both options. Tensor parallelism enables very big layers to be run and doesn’t need micro-batching, but it needs a lot of communication between devices, requiring high-bandwidth/low-latency interconnects (e.g. NVLink). On the other hand, pipeline parallelism needs minimal communication between devices, but requires micro-batching and balanced stages to avoid idleness.</p>
-
-<p>All types of parallelism discussed thus far are depicted in the following figure:</p>
 
 <figure>
   <picture>
@@ -190,13 +196,47 @@ C &amp;= M + \mathrm{logsumexp} (A \cdot B^T - M,\ \mathrm{dim} = 1).
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-      <source class="responsive-img-srcset" srcset="/assets/img/posts/2025-11-19-llm-efficiency/parallelism.drawio.svg" sizes="95vw" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2025-11-19-llm-efficiency/parallelism.svg" sizes="95vw" />
     
-    <img src="/assets/img/posts/2025-11-19-llm-efficiency/parallelism.drawio.svg" class="img-fluid rounded z-depth-1" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+    <img src="/assets/img/posts/2025-11-19-llm-efficiency/parallelism.svg" class="img-fluid rounded" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
   
+    <figcaption class="caption">How data, pipeline and tensor parallelism splits the model across 3 GPUs. Columns are layers and colours show which GPU holds each block; orange marks show when the GPUs communicate.</figcaption>
+  
 </figure>
+
+<p>The simplest type is <strong>data parallelism</strong>, where we store a full copy of the model in each GPU, and the data is sharded across GPUs and processed independently. For training it is then necessary to sync the gradients in all devices before performing the backward pass. This option is great to speed up execution, but it requires being able to fit the model in each device.</p>
+
+<p>In <strong>model parallelism</strong>, each device holds only <em>part</em> of the model, and the execution of the model is orchestrated across them. We can distinguish two types:</p>
+<ul>
+  <li><strong>Tensor parallelism</strong>. Each layer of the model is split across the devices. For example, the columns or rows in the weight matrix of a linear layer could be divided by GPU, and the result synced and concatenated between devices.</li>
+  <li>
+    <p><strong>Pipeline parallelism</strong>. The layers are grouped in stages and divided into the devices. For example, the first device could execute layers 1 to 4, and the second device layers 5 to 8. Of course, there is a dependency between the devices, both in the forward and in the backward pass. To avoid idle time, the batch is divided in micro-batches and the execution segmented across them. For example, the first device could execute the first micro-batch, and pass the result to the second device. While the second device processes the first micro-batch, the first device would start processing the second micro-batch.</p>
+
+    <p>The following figure compares the execution schedule of pipeline parallelism with and without micro-batching:</p>
+  </li>
+</ul>
+
+<figure>
+  <picture>
+    <!-- Auto scaling with imagemagick -->
+    <!--
+      See https://www.debugbear.com/blog/responsive-images#w-descriptors-and-the-sizes-attribute and
+      https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
+    -->
+    
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2025-11-19-llm-efficiency/pipeline-schedule.svg" sizes="95vw" />
+    
+    <img src="/assets/img/posts/2025-11-19-llm-efficiency/pipeline-schedule.svg" class="img-fluid rounded" width="100%" height="auto" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+  </picture>
+
+  
+    <figcaption class="caption">Pipeline parallelism on 3 GPUs (F = forward, B = backward). Splitting the batch into 4 micro-batches lets the GPUs work at the same time, halving the total time.</figcaption>
+  
+</figure>
+
+<p>There are several advantages and disadvantages for both options. Tensor parallelism enables very big layers to be run and doesn’t need micro-batching, but it needs a lot of communication between devices, requiring high-bandwidth/low-latency interconnects (e.g. NVLink). On the other hand, pipeline parallelism needs minimal communication between devices, but requires micro-batching and balanced stages to avoid idleness.</p>
 
 <p>One final note is that all of these types of parallelism can be combined. For example, we could have two copies of the model, each one using three devices via pipeline parallelism, requiring six GPUs in total.</p>
 

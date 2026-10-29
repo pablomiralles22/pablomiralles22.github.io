@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="320" viewBox="0 0 840 320" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" fill="#858585">
+<defs>
+<marker id="m0" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#4c8bd6"/></marker>
+<marker id="m1" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2fa58f"/></marker>
+<marker id="m2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#9b6dd1"/></marker>
+</defs>
+<rect x="6" y="10" width="250" height="300" rx="10" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2"/>
+<text x="131.0" y="36" font-size="16" text-anchor="middle" font-weight="600">Dense feed-forward</text>
+<text x="131.0" y="56" font-size="12.5" text-anchor="middle" >every token goes through one block</text>
+<text x="131.0" y="294" font-size="13" text-anchor="middle" font-weight="600">every token uses all weights</text>
+<rect x="266" y="10" width="568" height="300" rx="10" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2"/>
+<text x="550.0" y="36" font-size="16" text-anchor="middle" font-weight="600">Mixture-of-experts feed-forward</text>
+<text x="550.0" y="56" font-size="12.5" text-anchor="middle" >the router sends each token to its top-2 experts</text>
+<text x="550.0" y="294" font-size="13" text-anchor="middle" font-weight="600">2× the weights, same compute per token</text>
+<rect x="98" y="136.0" width="52" height="84" rx="5" fill="#858585" fill-opacity="0.12" stroke="#858585" stroke-width="1.5"/>
+<text x="124.0" y="183" font-size="14" text-anchor="middle" font-weight="600">FFN</text>
+<rect x="24" y="106.0" width="44" height="24" rx="4" fill="#4c8bd6" />
+<text x="46.0" y="122.5" font-size="13" text-anchor="middle" fill="#fff" font-weight="600">the</text>
+<path d="M68,118 C83.0,118 83.0,164 98,164" fill="none" stroke="#4c8bd6" stroke-width="1.8" />
+<path d="M150,164 C175.0,164 175.0,118 200,118" fill="none" stroke="#4c8bd6" stroke-width="1.8" marker-end="url(#m0)"/>
+<rect x="202.75" y="106.75" width="42.5" height="22.5" rx="4" fill="#4c8bd6" fill-opacity="0.15" stroke="#4c8bd6" stroke-width="1.5"/>
+<text x="224.0" y="122.5" font-size="13" text-anchor="middle" fill="#4c8bd6" font-weight="600">the</text>
+<rect x="24" y="166.0" width="44" height="24" rx="4" fill="#2fa58f" />
+<text x="46.0" y="182.5" font-size="13" text-anchor="middle" fill="#fff" font-weight="600">cat</text>
+<path d="M68,178 C83.0,178 83.0,178 98,178" fill="none" stroke="#2fa58f" stroke-width="1.8" />
+<path d="M150,178 C175.0,178 175.0,178 200,178" fill="none" stroke="#2fa58f" stroke-width="1.8" marker-end="url(#m1)"/>
+<rect x="202.75" y="166.75" width="42.5" height="22.5" rx="4" fill="#2fa58f" fill-opacity="0.15" stroke="#2fa58f" stroke-width="1.5"/>
+<text x="224.0" y="182.5" font-size="13" text-anchor="middle" fill="#2fa58f" font-weight="600">cat</text>
+<rect x="24" y="226.0" width="44" height="24" rx="4" fill="#9b6dd1" />
+<text x="46.0" y="242.5" font-size="13" text-anchor="middle" fill="#fff" font-weight="600">sat</text>
+<path d="M68,238 C83.0,238 83.0,192 98,192" fill="none" stroke="#9b6dd1" stroke-width="1.8" />
+<path d="M150,192 C175.0,192 175.0,238 200,238" fill="none" stroke="#9b6dd1" stroke-width="1.8" marker-end="url(#m2)"/>
+<rect x="202.75" y="226.75" width="42.5" height="22.5" rx="4" fill="#9b6dd1" fill-opacity="0.15" stroke="#9b6dd1" stroke-width="1.5"/>
+<text x="224.0" y="242.5" font-size="13" text-anchor="middle" fill="#9b6dd1" font-weight="600">sat</text>
+<rect x="378" y="96" width="14" height="164" rx="4" fill="#e8833a" />
+<text x="385.0" y="88" font-size="12.5" text-anchor="middle" fill="#e8833a" font-weight="600">router</text>
+<rect x="486" y="88.0" width="100" height="36" rx="5" fill="#858585" fill-opacity="0.12" stroke="#858585" stroke-width="1.5"/>
+<text x="536.0" y="111.0" font-size="13" text-anchor="middle" font-weight="600">Expert 1</text>
+<rect x="486" y="136.0" width="100" height="36" rx="5" fill="#858585" fill-opacity="0.12" stroke="#858585" stroke-width="1.5"/>
+<text x="536.0" y="159.0" font-size="13" text-anchor="middle" font-weight="600">Expert 2</text>
+<rect x="486" y="184.0" width="100" height="36" rx="5" fill="#858585" fill-opacity="0.12" stroke="#858585" stroke-width="1.5"/>
+<text x="536.0" y="207.0" font-size="13" text-anchor="middle" font-weight="600">Expert 3</text>
+<rect x="486" y="232.0" width="100" height="36" rx="5" fill="#858585" fill-opacity="0.12" stroke="#858585" stroke-width="1.5"/>
+<text x="536.0" y="255.0" font-size="13" text-anchor="middle" font-weight="600">Expert 4</text>
+<rect x="290" y="106.0" width="44" height="24" rx="4" fill="#4c8bd6" />
+<text x="312.0" y="122.5" font-size="13" text-anchor="middle" fill="#fff" font-weight="600">the</text>
+<line x1="334" y1="118" x2="378" y2="118" stroke="#4c8bd6" stroke-width="1.8"/>
+<path d="M392,118 C439.0,118 439.0,106.0 486,106.0" fill="none" stroke="#4c8bd6" stroke-width="1.8" />
+<path d="M586,106.0 C628.0,106.0 628.0,118 670,118" fill="none" stroke="#4c8bd6" stroke-width="1.8" />
+<path d="M392,118 C439.0,118 439.0,197.0 486,197.0" fill="none" stroke="#4c8bd6" stroke-width="1.8" />
+<path d="M586,197.0 C628.0,197.0 628.0,118 670,118" fill="none" stroke="#4c8bd6" stroke-width="1.8" />
+<circle cx="680" cy="118" r="10" fill="none" stroke="#4c8bd6" stroke-width="1.8"/>
+<path d="M675,118 h10 M680,113 v10" stroke="#4c8bd6" stroke-width="1.8"/>
+<line x1="690" y1="118" x2="738" y2="118" stroke="#4c8bd6" stroke-width="1.8" marker-end="url(#m0)"/>
+<rect x="740.75" y="106.75" width="42.5" height="22.5" rx="4" fill="#4c8bd6" fill-opacity="0.15" stroke="#4c8bd6" stroke-width="1.5"/>
+<text x="762.0" y="122.5" font-size="13" text-anchor="middle" fill="#4c8bd6" font-weight="600">the</text>
+<rect x="290" y="166.0" width="44" height="24" rx="4" fill="#2fa58f" />
+<text x="312.0" y="182.5" font-size="13" text-anchor="middle" fill="#fff" font-weight="600">cat</text>
+<line x1="334" y1="178" x2="378" y2="178" stroke="#2fa58f" stroke-width="1.8"/>
+<path d="M392,178 C439.0,178 439.0,149.0 486,149.0" fill="none" stroke="#2fa58f" stroke-width="1.8" />
+<path d="M586,149.0 C628.0,149.0 628.0,178 670,178" fill="none" stroke="#2fa58f" stroke-width="1.8" />
+<path d="M392,178 C439.0,178 439.0,207.0 486,207.0" fill="none" stroke="#2fa58f" stroke-width="1.8" />
+<path d="M586,207.0 C628.0,207.0 628.0,178 670,178" fill="none" stroke="#2fa58f" stroke-width="1.8" />
+<circle cx="680" cy="178" r="10" fill="none" stroke="#2fa58f" stroke-width="1.8"/>
+<path d="M675,178 h10 M680,173 v10" stroke="#2fa58f" stroke-width="1.8"/>
+<line x1="690" y1="178" x2="738" y2="178" stroke="#2fa58f" stroke-width="1.8" marker-end="url(#m1)"/>
+<rect x="740.75" y="166.75" width="42.5" height="22.5" rx="4" fill="#2fa58f" fill-opacity="0.15" stroke="#2fa58f" stroke-width="1.5"/>
+<text x="762.0" y="182.5" font-size="13" text-anchor="middle" fill="#2fa58f" font-weight="600">cat</text>
+<rect x="290" y="226.0" width="44" height="24" rx="4" fill="#9b6dd1" />
+<text x="312.0" y="242.5" font-size="13" text-anchor="middle" fill="#fff" font-weight="600">sat</text>
+<line x1="334" y1="238" x2="378" y2="238" stroke="#9b6dd1" stroke-width="1.8"/>
+<path d="M392,238 C439.0,238 439.0,159.0 486,159.0" fill="none" stroke="#9b6dd1" stroke-width="1.8" />
+<path d="M586,159.0 C628.0,159.0 628.0,238 670,238" fill="none" stroke="#9b6dd1" stroke-width="1.8" />
+<path d="M392,238 C439.0,238 439.0,250.0 486,250.0" fill="none" stroke="#9b6dd1" stroke-width="1.8" />
+<path d="M586,250.0 C628.0,250.0 628.0,238 670,238" fill="none" stroke="#9b6dd1" stroke-width="1.8" />
+<circle cx="680" cy="238" r="10" fill="none" stroke="#9b6dd1" stroke-width="1.8"/>
+<path d="M675,238 h10 M680,233 v10" stroke="#9b6dd1" stroke-width="1.8"/>
+<line x1="690" y1="238" x2="738" y2="238" stroke="#9b6dd1" stroke-width="1.8" marker-end="url(#m2)"/>
+<rect x="740.75" y="226.75" width="42.5" height="22.5" rx="4" fill="#9b6dd1" fill-opacity="0.15" stroke="#9b6dd1" stroke-width="1.5"/>
+<text x="762.0" y="242.5" font-size="13" text-anchor="middle" fill="#9b6dd1" font-weight="600">sat</text>
+<text x="680" y="274" font-size="11.5" text-anchor="middle" >weighted sum</text>
+</svg>
