@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="396" viewBox="0 0 840 396" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" fill="#858585">
+<defs>
+<marker id="mi" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#858585"/></marker>
+<pattern id="h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#858585" stroke-opacity="0.4" stroke-width="1.5"/></pattern>
+</defs>
+<rect x="6" y="10" width="409" height="376" rx="10" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2"/>
+<text x="210.5" y="36" font-size="16" text-anchor="middle" font-weight="600">Standard attention</text>
+<text x="210.5" y="56" font-size="12.5" text-anchor="middle" >compute all scores, softmax them, then multiply by V</text>
+<text x="210.5" y="370" font-size="13" text-anchor="middle" fill="#858585" font-weight="600">N×N scores written to and read from HBM</text>
+<text x="44" y="221.0" font-size="13" text-anchor="end" font-weight="600">Q</text>
+<text x="178.0" y="82" font-size="13" text-anchor="middle" font-weight="600">Kᵀ</text>
+<text x="332.0" y="118" font-size="13" text-anchor="middle" font-weight="600">O</text>
+<rect x="55" y="130" width="26" height="172" rx="3" fill="#4c8bd6" />
+<rect x="92" y="93" width="172" height="26" rx="3" fill="#2fa58f" />
+<rect x="319" y="130" width="26" height="172" rx="3" fill="#9b6dd1" />
+<rect x="92" y="130" width="172" height="172" rx="5" fill="#858585" fill-opacity="0.12" stroke="#858585" stroke-width="1.5"/>
+<text x="178.0" y="222.0" font-size="18" text-anchor="middle" font-weight="600">N×N</text>
+<line x1="270" y1="216.0" x2="314" y2="216.0" stroke="#858585" stroke-width="1.6" marker-end="url(#mi)"/>
+<text x="292.0" y="208.0" font-size="11.5" text-anchor="middle" >× V</text>
+<text x="178.0" y="330" font-size="11.5" text-anchor="middle" >S = QKᵀ and P = softmax(S), both N×N</text>
+<rect x="425" y="10" width="409" height="376" rx="10" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2"/>
+<text x="629.5" y="36" font-size="16" text-anchor="middle" font-weight="600">FlashAttention</text>
+<text x="629.5" y="56" font-size="12.5" text-anchor="middle" >per Q block, stream K/V blocks through on-chip SRAM</text>
+<text x="629.5" y="370" font-size="13" text-anchor="middle" fill="#e8833a" font-weight="600">one tile at a time: memory linear in N</text>
+<text x="463" y="221.0" font-size="13" text-anchor="end" font-weight="600">Q</text>
+<text x="597.0" y="82" font-size="13" text-anchor="middle" font-weight="600">Kᵀ</text>
+<text x="751.0" y="118" font-size="13" text-anchor="middle" font-weight="600">O</text>
+<rect x="474" y="130" width="26" height="40" rx="3" fill="#4c8bd6" fill-opacity="0.15" stroke-width="1.5" stroke="#4c8bd6"/>
+<rect x="511" y="93" width="40" height="26" rx="3" fill="#2fa58f" fill-opacity="0.15" stroke-width="1.5" stroke="#2fa58f"/>
+<rect x="738" y="130" width="26" height="40" rx="3" fill="#9b6dd1" fill-opacity="0.15" stroke-width="1.5" stroke="#9b6dd1"/>
+<rect x="474" y="174" width="26" height="40" rx="3" fill="#4c8bd6" />
+<rect x="555" y="93" width="40" height="26" rx="3" fill="#2fa58f" fill-opacity="0.15" stroke-width="1.5" stroke="#2fa58f"/>
+<rect x="738" y="174" width="26" height="40" rx="3" fill="#9b6dd1" />
+<rect x="474" y="218" width="26" height="40" rx="3" fill="#4c8bd6" fill-opacity="0.15" stroke-width="1.5" stroke="#4c8bd6"/>
+<rect x="599" y="93" width="40" height="26" rx="3" fill="#2fa58f" />
+<rect x="738" y="218" width="26" height="40" rx="3" fill="#9b6dd1" fill-opacity="0.15" stroke-width="1.5" stroke="#9b6dd1"/>
+<rect x="474" y="262" width="26" height="40" rx="3" fill="#4c8bd6" fill-opacity="0.15" stroke-width="1.5" stroke="#4c8bd6"/>
+<rect x="643" y="93" width="40" height="26" rx="3" fill="#2fa58f" fill-opacity="0.15" stroke-width="1.5" stroke="#2fa58f"/>
+<rect x="738" y="262" width="26" height="40" rx="3" fill="#9b6dd1" fill-opacity="0.15" stroke-width="1.5" stroke="#9b6dd1"/>
+<text x="478.875" y="198.0" font-size="13" text-anchor="start" fill="#fff" font-weight="600">Q</text>
+<text x="489.275" y="201.0" font-size="9.36" text-anchor="start" fill="#fff" font-weight="600">i</text>
+<text x="610.875" y="110.0" font-size="13" text-anchor="start" fill="#fff" font-weight="600">K</text>
+<text x="621.275" y="113.0" font-size="9.36" text-anchor="start" fill="#fff" font-weight="600">j</text>
+<text x="742.875" y="198.0" font-size="13" text-anchor="start" fill="#fff" font-weight="600">O</text>
+<text x="753.275" y="201.0" font-size="9.36" text-anchor="start" fill="#fff" font-weight="600">i</text>
+<rect x="511" y="130" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="555" y="130" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="599" y="130" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="643" y="130" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="511" y="174" width="40" height="40" rx="3" fill="url(#h)" />
+<rect x="555" y="174" width="40" height="40" rx="3" fill="url(#h)" />
+<rect x="599" y="174" width="40" height="40" rx="3" fill="#e8833a" />
+<text x="607.1" y="199.0" font-size="14" text-anchor="start" fill="#fff" font-weight="600">S</text>
+<text x="618.3000000000001" y="202.0" font-size="10.08" text-anchor="start" fill="#fff" font-weight="600">ij</text>
+<rect x="643" y="174" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="511" y="218" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="555" y="218" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="599" y="218" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="643" y="218" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="511" y="262" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="555" y="262" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="599" y="262" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="643" y="262" width="40" height="40" rx="3" fill="none" stroke="#858585" stroke-opacity="0.45" stroke-width="1.2" stroke-dasharray="4 3"/>
+<line x1="689" y1="194.0" x2="733" y2="194.0" stroke="#858585" stroke-width="1.6" marker-end="url(#mi)"/>
+<text x="697.7175" y="186.0" font-size="11.5" text-anchor="start" >× V</text>
+<text x="719.1075" y="189.0" font-size="8.28" text-anchor="start" >j</text>
+<text x="773" y="198.0" font-size="11.5" text-anchor="start" >updated</text>
+<text x="773" y="212.0" font-size="11.5" text-anchor="start" >per tile</text>
+<line x1="513" y1="326" x2="681" y2="326" stroke="#858585" stroke-width="1.6" marker-end="url(#mi)"/>
+<text x="597.0" y="344" font-size="11.5" text-anchor="middle" >loop over K/V blocks (Q blocks run in parallel)</text>
+</svg>
