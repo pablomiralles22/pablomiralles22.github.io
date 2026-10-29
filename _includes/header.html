@@ -5,10 +5,10 @@
     <h2 class="title">{{ site.title }}</h2>
     <nav>
         <p>
-            <a href="{{ site.url }}">Home</a> 
+            <a href="{{ "/" | relative_url }}">Home</a> 
         
             {% for link in site.links %}
-                <a href="{{ site.url }}{{ link.url }}" {% if link.new_tab %}target="_blank"{% endif %}>{{ link.name }}</a>
+                <a href="{{ link.url | relative_url }}" {% if link.new_tab %}target="_blank"{% endif %}>{{ link.name }}</a>
             {% endfor %}
             
             {% for link in site.special_links %}
