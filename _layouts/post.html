@@ -13,6 +13,8 @@ layout: compress
     <i>{{ page.date | date: "%b %d, %Y" }}</i>
     <h4 class="subtitle">{{ page.subtitle }}</h4>
 
+    {% include toc.html html=content %}
+
     {{ page.content }}
 
 

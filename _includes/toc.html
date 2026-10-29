@@ -1,0 +1,43 @@
+{% comment %}
+  Table of contents built from the rendered headings of the post.
+  Lists the two shallowest heading levels present (posts mix ##, ### and ####).
+  Hidden with `toc: false` in the front matter or when there are fewer than 3 headings.
+{% endcomment %}
+{% if page.toc != false %}
+  {% assign chunks = include.html | split: "<h" %}
+  {% assign levels = "" %}
+  {% for chunk in chunks offset: 1 %}
+    {% assign level = chunk | slice: 0 %}
+    {% assign after = chunk | slice: 1 %}
+    {% if "23456" contains level and after == " " %}
+      {% assign levels = levels | append: level %}
+    {% endif %}
+  {% endfor %}
+  {% assign sorted = levels | split: "" | uniq | sort %}
+  {% if levels.size >= 3 %}
+    <details class="toc">
+      <summary>Contents</summary>
+      <ul>
+        {% for chunk in chunks offset: 1 %}
+          {% assign level = chunk | slice: 0 %}
+          {% assign after = chunk | slice: 1 %}
+          {% if after != " " %}{% continue %}{% endif %}
+          {% if level == sorted[0] %}
+            {% assign depth = 1 %}
+          {% elsif level == sorted[1] %}
+            {% assign depth = 2 %}
+          {% else %}
+            {% continue %}
+          {% endif %}
+          {% assign id = chunk | split: 'id="' | slice: 1 | first | split: '"' | first %}
+          {% assign closing = "</h" | append: level %}
+          {% assign text = chunk | split: closing | first | split: ">" | shift | join: ">" | strip_html | strip %}
+          <li class="toc-l{{ depth }}"><a href="#{{ id }}">{{ text }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
+    <script>
+      if (matchMedia("(min-width: 1240px)").matches) document.querySelector(".toc").open = true;
+    </script>
+  {% endif %}
+{% endif %}
