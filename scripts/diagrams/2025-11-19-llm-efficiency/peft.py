@@ -16,17 +16,15 @@ WHITE = 'fill="#fff" font-weight="600"'
 
 
 def label(x, y, parts, size, extra=""):
-    """Text roughly centred at x made of (text, subscript) parts. It is left-anchored with
-    dy tspans, because cairosvg misplaces tspans in middle-anchored text."""
-    k = 0.58 if "font-weight" in extra else 0.56
-    width = sum(k * size * len(s) + 0.5 * size * len(i) for s, i in parts)
+    """Text centred at x made of (text, subscript) parts, with subscripts as dy tspans.
+    cairosvg misplaces tspans in middle-anchored text, so preview it in a browser."""
     body, low = "", False
     for s, i in parts:
         body += f'<tspan dy="-3">{s}</tspan>' if low else s
         low = bool(i)
         if i:
             body += f'<tspan dy="3" font-size="{size * 0.72:.1f}">{i}</tspan>'
-    return [text(x - width / 2, y, body, size, "start", extra)]
+    return [text(x, y, body, size, extra=extra)]
 
 
 for x0, w, title, subtitle, foot in [
@@ -40,34 +38,45 @@ for x0, w, title, subtitle, foot in [
     o += label(x0 + w / 2, PY + PH - 16, foot, 13, f'fill="{TRAIN}" {BOLD}')
 
 # ---- LoRA ----
-dx = 30
 S, R = 100, 16                 # W is S x S (n_in x n_out), the rank r is R
 wy, ay = 80, 210               # tops of W and A
 wc, ac = wy + S / 2, ay + S / 2
 xc = (wc + ac) / 2
 CW, CH = 44, 24
-xx = 28 + dx
-ax_, wx = 140 + dx, 180 + dx   # A and W / B left edges
-sx, hx = 340 + dx, 380 + dx    # sum and output
+OR, G = 9, 7                   # radius of the multiplication circles, gap to the operand
+xx = 28
+wx = 220                       # W left edge
+ax_ = wx + S / 2 - (R + 2 * G + 2 * OR + S) / 2   # A x B centred under W
+bx = ax_ + R + 2 * G + 2 * OR
+sx, hx = 380, 420              # sum and output
+
+
+def times(cx, cy):
+    """Circled multiplication sign."""
+    d = OR * 0.42
+    return [f'<circle cx="{cx}" cy="{cy}" r="{OR}" fill="none" stroke="{INK}" stroke-width="1.8"/>',
+            f'<path d="M{cx - d},{cy - d} L{cx + d},{cy + d} M{cx - d},{cy + d} L{cx + d},{cy - d}" stroke="{INK}" stroke-width="1.8"/>']
+
 
 o.append(rect(xx, xc - CH / 2, CW, CH, TOK, 4))
 o.append(text(xx + CW / 2, xc + 4.5, "x", 13, extra=WHITE))
-o.append(curve(xx + CW, xc, wx - 2, wc, INK, 'marker-end="url(#mi)"'))
-o.append(curve(xx + CW, xc, ax_ - 2, ac, INK, 'marker-end="url(#mi)"'))
+for cx, cy in [(wx - G - OR, wc), (ax_ - G - OR, ac)]:
+    o.append(curve(xx + CW, xc, cx - OR - 2, cy, INK, 'marker-end="url(#mi)"'))
+    o += times(cx, cy)
 
 o.append(rect(wx, wy, S, S, INK, 5, FROZEN))
 o.append(text(wx + S / 2, wc + 2, "W", 16, extra=BOLD))
-o.append(text(wx + S / 2, wc + 20, "frozen", 11.5))
+o.append(text(wx + S / 2, wc + 20, "frozen ❄️", 11.5))
 
 o.append(rect(ax_, ay, R, S, TRAIN, 3))
 o.append(text(ax_ + R / 2, ac + 4.5, "A", 13, extra=WHITE))
-o.append(rect(wx, ac - R / 2, S, R, TRAIN, 3))
-o.append(text(wx + S / 2, ac + 4.5, "B", 13, extra=WHITE))
-o.append(line(ax_ + R, ac, wx - 2, ac, TRAIN, 'marker-end="url(#ma)"'))
-o.append(text(wx + S / 2, ac + R / 2 + 22, "trainable, rank r", 11.5, extra=f'fill="{TRAIN}"'))
+o += times(ax_ + R + G + OR, ac)
+o.append(rect(bx, ac - R / 2, S, R, TRAIN, 3))
+o.append(text(bx + S / 2, ac + 4.5, "B", 13, extra=WHITE))
+o.append(text(bx + S / 2, ac + R / 2 + 22, "trainable, rank r", 11.5, extra=f'fill="{TRAIN}"'))
 
 o.append(curve(wx + S, wc, sx - 10, xc, INK))
-o.append(curve(wx + S, ac, sx - 10, xc, TRAIN))
+o.append(curve(bx + S, ac, sx - 10, xc, INK))
 o.append(f'<circle cx="{sx}" cy="{xc}" r="10" fill="none" stroke="{INK}" stroke-width="1.8"/>')
 o.append(f'<path d="M{sx - 5},{xc} h10 M{sx},{xc - 5} v10" stroke="{INK}" stroke-width="1.8"/>')
 o.append(line(sx + 10, xc, hx - 2, xc, INK, 'marker-end="url(#mi)"'))
@@ -89,6 +98,6 @@ o.append(text(tx + CW / 2, ty0 - 12, "soft prompt", 11.5, extra=f'fill="{TRAIN}"
 o.append(text(tx + CW / 2, my1 + 12, "input tokens", 11.5, extra=f'fill="{TOK}"'))
 o.append(rect(mx, my0, mw, my1 - my0, INK, 5, FROZEN))
 o.append(text(mx + mw / 2, (my0 + my1) / 2, "LLM", 16, extra=BOLD))
-o.append(text(mx + mw / 2, (my0 + my1) / 2 + 18, "frozen", 11.5))
+o.append(text(mx + mw / 2, (my0 + my1) / 2 + 18, "frozen ❄️", 11.5))
 
 save(__file__, o)
