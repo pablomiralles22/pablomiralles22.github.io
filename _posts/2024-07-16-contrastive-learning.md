@@ -24,7 +24,7 @@ functions, data generation techniques, negative examples and applications.
 
 Consider some neural network such as the following:
 
-{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/nn_repr.pdf" alt="Fully connected neural network with an input layer, two hidden representation layers and an output layer, each neuron labelled with its activation value" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/nn-representations.svg" alt="Fully connected neural network with an input layer, two hidden layers and an output layer, each neuron labelled with its activation value" caption="A small fully connected network. The outputs of the hidden layers (orange) are intermediate representations of the input." %}
 
 Neural networks are the composition of transformations, where every
 intermediate layer applies a parameterized function to the input coming from
@@ -58,7 +58,7 @@ network. This is called **transfer learning**: first **pretraining** for a
 head) on the **downstream task** we are actually interested in solving. The
 following diagram shows this process.
 
-{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.drawio.svg" alt="Diagram of transfer learning: an encoder trained with a pretext task head is kept and reused with a new head for a downstream task" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.svg" alt="Diagram of transfer learning: an encoder trained with a pretext task head is kept and reused with a new head for a downstream task" caption="Transfer learning. The encoder is pretrained on a pretext task, then reused with a new head on the downstream task. Orange blocks are trained and blue ones frozen, and the reused encoder can be frozen, fine-tuned or partially frozen." %}
 
 ### Learning very general representations: self-supervised learning
 
@@ -209,7 +209,7 @@ Let’s establish a framework and notation for the rest of the text.
 
 This structure is shown graphically for two examples in the following diagram:
 
-{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/contrastive-learning.drawio.svg" alt="Diagram of a contrastive learning setup where two inputs pass through an encoder and a projection head, and the similarity or distance between the outputs feeds the loss" class="img-fluid rounded z-depth-1" %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/contrastive-setup.svg" alt="Diagram of a contrastive learning setup where two inputs pass through an encoder and a projection head, and the similarity or distance between the outputs feeds the loss" caption="Contrastive setup for two examples. Each goes through an encoder and a projection head, and the loss is computed from the similarity or distance between the embeddings." %}
 
 ### Loss functions in contrastive learning
 
@@ -237,21 +237,7 @@ minimizing this expression, the distance to positive samples should be close to
 zero, and dissimilar instances should be separated by a margin of at least
 $\varepsilon$. The function is plotted in the following figure.
 
-<!-- <figcaption>
-    Plot of the pair loss function for positive (left) and negative (right)
-    examples. Arrows represent gradient direction and norm.
-</figcaption> -->
-
-{% figure [caption:"Plot of the pair loss function for positive (left) and negative (right) examples. Arrows represent gradient direction and norm."] [class:"class1 class2"] %}
-<div style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;">
-    <div style="flex: 1; text-align: center;">
-        {% include figure.liquid loading="eager" path="assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos.pdf" alt="Plot of the pair loss for a positive pair, with gradient arrows pulling the embedding towards the centre" zoomable=true %}
-    </div>
-    <div style="flex: 1; text-align: center;">
-        {% include figure.liquid loading="eager" path="assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg.pdf" alt="Plot of the pair loss for a negative pair, with gradient arrows pushing the embedding outwards until it is beyond the margin" zoomable=true %}
-    </div>
-</div>
-{% endfigure %}
+{% include figure.liquid path="assets/img/posts/2024-07-16-contrastive-learning/pair-loss.svg" alt="Two plots of the pair loss around an anchor embedding, with arrows pulling a positive towards it and pushing a negative out to the margin" caption="Pair loss as a function of where the second embedding lies around the anchor z, for a positive (left) and a negative (right). Shading shows the loss and arrows the gradient-descent step, whose length grows with the gradient norm." %}
 
 
 #### Triplet loss
