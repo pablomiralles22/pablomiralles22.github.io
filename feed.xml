@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2026-10-30T12:43:56+01:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><author><name>Pablo Miralles</name></author><entry><title type="html">Fused matmul + log-sum-exp in Triton for LLM log-probs</title><link href="https://pablomirallesg.com/blog/fused-matmul-logsumexp" rel="alternate" type="text/html" title="Fused matmul + log-sum-exp in Triton for LLM log-probs" /><published>2025-12-11T00:00:00+01:00</published><updated>2025-12-11T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/fused-matmul-logsumexp</id><content type="html" xml:base="https://pablomirallesg.com/blog/fused-matmul-logsumexp"><![CDATA[<h3 id="motivation">Motivation</h3>
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="4.4.1">Jekyll</generator><link href="https://pablomirallesg.com/feed.xml" rel="self" type="application/atom+xml" /><link href="https://pablomirallesg.com/" rel="alternate" type="text/html" /><updated>2026-10-30T17:08:36+01:00</updated><id>https://pablomirallesg.com/feed.xml</id><title type="html">Pablo Miralles</title><subtitle>Personal website of Pablo Miralles, Mathematics and Computer Science graduate, PhD student in Deep Learning at Technical University of Madrid</subtitle><author><name>Pablo Miralles</name></author><entry><title type="html">Fused matmul + log-sum-exp in Triton for LLM log-probs</title><link href="https://pablomirallesg.com/blog/fused-matmul-logsumexp" rel="alternate" type="text/html" title="Fused matmul + log-sum-exp in Triton for LLM log-probs" /><published>2025-12-11T00:00:00+01:00</published><updated>2025-12-11T00:00:00+01:00</updated><id>https://pablomirallesg.com/blog/fused-matmul-logsumexp</id><content type="html" xml:base="https://pablomirallesg.com/blog/fused-matmul-logsumexp"><![CDATA[<h3 id="motivation">Motivation</h3>
 <p>In my research I have worked with methods that involve retrieving the log-probabilities of an input text from a large language model. Let me first introduce what I mean exactly and why this is useful.</p>
 
 <p>Consider an input text tokenized into the sequence $t_1,\dots,t_L$. Each token is mapped to an initial embedding, forming the initial hidden-state matrix $\mathrm{HS}^0 \in \mathbb{R}^{L \times D}$. The transformer then processes these representations and produces the contextualized final hidden states</p>
@@ -579,11 +579,13 @@ functions, data generation techniques, negative examples and applications.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/nn_repr-480.webp 480w,/assets/img/posts/2024-07-16-contrastive-learning/nn_repr-800.webp 800w,/assets/img/posts/2024-07-16-contrastive-learning/nn_repr-1400.webp 1400w," type="image/webp" sizes="95vw" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/nn-representations.svg" sizes="95vw" />
     
-    <img src="/assets/img/posts/2024-07-16-contrastive-learning/nn_repr.pdf" class="img-fluid rounded z-depth-1" width="100%" height="auto" alt="Fully connected neural network with an input layer, two hidden representation layers and an output layer, each neuron labelled with its activation value" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/nn-representations.svg" width="100%" height="auto" alt="Fully connected neural network with an input layer, two hidden layers and an output layer, each neuron labelled with its activation value" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
+  
+    <figcaption class="caption">A small fully connected network. The outputs of the hidden layers (orange) are intermediate representations of the input.</figcaption>
   
 </figure>
 
@@ -627,11 +629,13 @@ following diagram shows this process.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.drawio.svg" sizes="95vw" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.svg" sizes="95vw" />
     
-    <img src="/assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.drawio.svg" class="img-fluid rounded z-depth-1" width="100%" height="auto" alt="Diagram of transfer learning: an encoder trained with a pretext task head is kept and reused with a new head for a downstream task" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/transfer-learning.svg" width="100%" height="auto" alt="Diagram of transfer learning: an encoder trained with a pretext task head is kept and reused with a new head for a downstream task" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
+  
+    <figcaption class="caption">Transfer learning. The encoder is pretrained on a pretext task, then reused with a new head on the downstream task. Orange blocks are trained and blue ones frozen, and the reused encoder can be frozen, fine-tuned or partially frozen.</figcaption>
   
 </figure>
 
@@ -804,11 +808,13 @@ subscript.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/contrastive-learning.drawio.svg" sizes="95vw" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/contrastive-setup.svg" sizes="95vw" />
     
-    <img src="/assets/img/posts/2024-07-16-contrastive-learning/contrastive-learning.drawio.svg" class="img-fluid rounded z-depth-1" width="100%" height="auto" alt="Diagram of a contrastive learning setup where two inputs pass through an encoder and a projection head, and the similarity or distance between the outputs feeds the loss" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/contrastive-setup.svg" width="100%" height="auto" alt="Diagram of a contrastive learning setup where two inputs pass through an encoder and a projection head, and the similarity or distance between the outputs feeds the loss" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
+  
+    <figcaption class="caption">Contrastive setup for two examples. Each goes through an encoder and a projection head, and the loss is computed from the similarity or distance between the embeddings.</figcaption>
   
 </figure>
 
@@ -836,18 +842,6 @@ minimizing this expression, the distance to positive samples should be close to
 zero, and dissimilar instances should be separated by a margin of at least
 $\varepsilon$. The function is plotted in the following figure.</p>
 
-<!-- <figcaption>
-    Plot of the pair loss function for positive (left) and negative (right)
-    examples. Arrows represent gradient direction and norm.
-</figcaption> -->
-
-<figure class="class1 class2">
-<div style="display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 20px;">
-    <div style="flex: 1; text-align: center;">
-        
-
-
-
 <figure>
   <picture>
     <!-- Auto scaling with imagemagick -->
@@ -856,39 +850,14 @@ $\varepsilon$. The function is plotted in the following figure.</p>
       https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
     -->
     
-      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos-480.webp 480w,/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos-800.webp 800w,/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos-1400.webp 1400w," type="image/webp" sizes="95vw" />
+      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/pair-loss.svg" sizes="95vw" />
     
-    <img src="/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_pos.pdf" width="100%" height="auto" alt="Plot of the pair loss for a positive pair, with gradient arrows pulling the embedding towards the centre" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
+    <img src="/assets/img/posts/2024-07-16-contrastive-learning/pair-loss.svg" width="100%" height="auto" alt="Two plots of the pair loss around an anchor embedding, with arrows pulling a positive towards it and pushing a negative out to the margin" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
   </picture>
 
   
-</figure>
-
-    </div>
-    <div style="flex: 1; text-align: center;">
-        
-
-
-
-<figure>
-  <picture>
-    <!-- Auto scaling with imagemagick -->
-    <!--
-      See https://www.debugbear.com/blog/responsive-images#w-descriptors-and-the-sizes-attribute and
-      https://developer.mozilla.org/en-US/docs/Learn/HTML/Multimedia_and_embedding/Responsive_images for info on defining 'sizes' for responsive images
-    -->
-    
-      <source class="responsive-img-srcset" srcset="/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg-480.webp 480w,/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg-800.webp 800w,/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg-1400.webp 1400w," type="image/webp" sizes="95vw" />
-    
-    <img src="/assets/img/posts/2024-07-16-contrastive-learning/pair_loss_neg.pdf" width="100%" height="auto" alt="Plot of the pair loss for a negative pair, with gradient arrows pushing the embedding outwards until it is beyond the margin" data-zoomable="" loading="eager" onerror="this.onerror=null; $('.responsive-img-srcset').remove();" />
-  </picture>
-
+    <figcaption class="caption">Pair loss as a function of where the second embedding lies around the anchor z, for a positive (left) and a negative (right). Shading shows the loss and arrows the gradient-descent step, whose length grows with the gradient norm.</figcaption>
   
-</figure>
-
-    </div>
-</div>
-  <figcaption>Plot of the pair loss function for positive (left) and negative (right) examples. Arrows represent gradient direction and norm.</figcaption>
 </figure>
 
 <h4 id="triplet-loss">Triplet loss</h4>
