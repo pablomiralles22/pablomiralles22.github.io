@@ -1,4 +1,6 @@
 _site
+# Compiled from scripts/cv.typ by deploy.sh
+assets/cv.pdf
 .sass-cache
 .jekyll-cache
 .jekyll-metadata

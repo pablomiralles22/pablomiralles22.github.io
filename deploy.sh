@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Compile the CV served at /assets/cv.pdf
+typst compile scripts/cv.typ assets/cv.pdf
+
 # Fresh production build (jekyll serve leaves localhost URLs in _site)
 JEKYLL_ENV=production bundle exec jekyll build
 
