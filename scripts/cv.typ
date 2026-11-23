@@ -183,7 +183,7 @@
   #plain-list(
     [#em[Supervision]: Co-supervised 6 M.Sc. theses.],
     [#em[Seminars]: Co-organizer of the weekly research group seminar series (2025/26): members' research talks and tutorials on tools and topics such as LLM efficiency.],
-    [#em[Peer review]: Knowledge-Based Systems (3 papers), IDEAL (2 papers), The Computer Journal (1 paper).],
+    [#em[Peer review]: Information Fusion (1 paper), Knowledge-Based Systems (3 papers), IDEAL (2 papers), The Computer Journal (1 paper).],
   )
 ]
 
